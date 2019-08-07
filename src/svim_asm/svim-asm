@@ -85,13 +85,11 @@ def main():
         try:
             if aln_file.header["HD"]["SO"] == "coordinate":
                 sv_signatures = analyze_alignment_file_coordsorted(aln_file, options)
-            elif aln_file.header["HD"]["SO"] == "queryname":
-                sv_signatures = analyze_alignment_file_querysorted(aln_file, options)
             else:
-                logging.error("Input BAM file needs to be coordinate-sorted or queryname-sorted. The given file, however, is unsorted according to its header line.")
+                logging.error("Input BAM file needs to be coordinate-sorted. Exiting..")
                 return
         except KeyError:
-            logging.error("Is the given input BAM file sorted? It does not contain a sorting order in its header line.")
+            logging.error("Is the given input BAM file coordinate-sorted? It does not contain a sorting order in its header line.")
             return
 
     deletion_signatures = [ev for ev in sv_signatures if ev.type == "DEL"]
