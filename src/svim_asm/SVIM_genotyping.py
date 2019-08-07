@@ -1,9 +1,9 @@
 import time
 import logging
 
-from svim.SVIM_intra import analyze_alignment_indel
-from svim.SVIM_inter import analyze_read_segments
-from svim.SVIM_COLLECT import retrieve_other_alignments
+from svim_asm.SVIM_intra import analyze_alignment_indel
+from svim_asm.SVIM_inter import analyze_read_segments
+from svim_asm.SVIM_COLLECT import retrieve_other_alignments
 
 
 def span_position_distance(candidate, signature, distance_normalizer):

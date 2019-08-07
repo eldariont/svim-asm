@@ -8,8 +8,8 @@ from statistics import mean, stdev
 import numpy as np
 from scipy.cluster.hierarchy import linkage, fcluster
 
-from svim.SVSignature import SignatureClusterUniLocal, SignatureClusterBiLocal
-from svim.SVCandidate import CandidateDuplicationInterspersed
+from svim_asm.SVSignature import SignatureClusterUniLocal, SignatureClusterBiLocal
+from svim_asm.SVCandidate import CandidateDuplicationInterspersed
 
 
 def form_partitions(sv_signatures, max_distance):

@@ -5,9 +5,9 @@ from bisect import bisect_left
 from collections import defaultdict
 from math import pow, sqrt
 
-from svim.SVSignature import SignatureTranslocation, SignatureInsertionFrom, SignatureClusterBiLocal
-from svim.SVCandidate import CandidateDuplicationInterspersed
-from svim.SVIM_clustering import span_position_distance
+from svim_asm.SVSignature import SignatureTranslocation, SignatureInsertionFrom, SignatureClusterBiLocal
+from svim_asm.SVCandidate import CandidateDuplicationInterspersed
+from svim_asm.SVIM_clustering import span_position_distance
 
 def flag_cutpaste_candidates(insertion_from_signature_clusters, deletion_signature_clusters, options):
     """Flag duplication signature clusters if they overlap a deletion"""

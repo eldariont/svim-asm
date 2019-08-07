@@ -3,10 +3,10 @@ import tempfile
 
 from random import uniform
 
-from svim.SVIM_input_parsing import parse_arguments
-from svim.SVSignature import SignatureDeletion
-from svim.SVIM_CLUSTER import cluster_sv_signatures, write_signature_clusters_bed, write_signature_clusters_vcf
-from svim.SVIM_COMBINE import combine_clusters
+from svim_asm.SVIM_input_parsing import parse_arguments
+from svim_asm.SVSignature import SignatureDeletion
+from svim_asm.SVIM_CLUSTER import cluster_sv_signatures, write_signature_clusters_bed, write_signature_clusters_vcf
+from svim_asm.SVIM_COMBINE import combine_clusters
 
 class TestSVIMClustering(unittest.TestCase):
     def setUp(self):

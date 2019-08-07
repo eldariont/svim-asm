@@ -15,11 +15,11 @@ def get_version(string):
       return version_str
 
 
-setup(name='svim',
-      version=get_version(open('src/svim/svim').read()),
+setup(name='svim-asm',
+      version=get_version(open('src/svim_asm/svim-asm').read()),
       description='A structural variant caller for long reads.',
       long_description=long_description,
-      url='https://github.com/eldariont/svim',
+      url='https://github.com/eldariont/svim-asm',
       author='David Heller',
       author_email='heller_d@molgen.mpg.de',
       license='GPLv3',
@@ -31,10 +31,10 @@ setup(name='svim',
       'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
       'Programming Language :: Python :: 3.6'
       ],
-      keywords='svim SV PacBio structural variation caller',
+      keywords='svim-asm SV PacBio structural variation caller',
       packages = find_packages("src"),
       package_dir = {"": "src"},
       data_files = [("", ["LICENSE"])],
       zip_safe=False,
       install_requires=['pysam', 'numpy', 'scipy', 'matplotlib'],
-      scripts=['src/svim/svim'])
+      scripts=['src/svim_asm/svim-asm'])

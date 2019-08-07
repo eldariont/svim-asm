@@ -1,6 +1,6 @@
 import unittest
 
-from svim.SVIM_intra import analyze_cigar_indel
+from svim_asm.SVIM_intra import analyze_cigar_indel
 
 class TestSVIMIntra(unittest.TestCase):
 

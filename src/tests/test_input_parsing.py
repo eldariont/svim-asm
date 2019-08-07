@@ -1,7 +1,7 @@
 import unittest
 import tempfile
 
-from svim.SVIM_input_parsing import guess_file_type, parse_arguments
+from svim_asm.SVIM_input_parsing import guess_file_type, parse_arguments
 
 class TestInputParsing(unittest.TestCase):
 

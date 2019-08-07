@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '1.2.0'
+__version__ = '0.1.0'
 __author__ = 'David Heller'
 
 import sys
@@ -13,13 +13,13 @@ import pysam
 
 from time import strftime, localtime
 
-from svim.SVIM_input_parsing import parse_arguments, guess_file_type, read_file_list
-from svim.SVIM_alignment import run_alignment
-from svim.SVIM_COLLECT import analyze_alignment_file_coordsorted, analyze_alignment_file_querysorted
-from svim.SVIM_CLUSTER import cluster_sv_signatures, write_signature_clusters_bed, write_signature_clusters_vcf
-from svim.SVIM_COMBINE import combine_clusters, write_candidates, write_final_vcf
-from svim.SVIM_genotyping import genotype
-from svim.SVIM_plot import plot_sv_lengths, plot_sv_alleles
+from svim_asm.SVIM_input_parsing import parse_arguments, guess_file_type, read_file_list
+from svim_asm.SVIM_alignment import run_alignment
+from svim_asm.SVIM_COLLECT import analyze_alignment_file_coordsorted, analyze_alignment_file_querysorted
+from svim_asm.SVIM_CLUSTER import cluster_sv_signatures, write_signature_clusters_bed, write_signature_clusters_vcf
+from svim_asm.SVIM_COMBINE import combine_clusters, write_candidates, write_final_vcf
+from svim_asm.SVIM_genotyping import genotype
+from svim_asm.SVIM_plot import plot_sv_lengths, plot_sv_alleles
 
 
 def main():
@@ -48,7 +48,7 @@ def main():
     consoleHandler.setFormatter(logFormatter)
     rootLogger.addHandler(consoleHandler)
 
-    logging.info("****************** Start SVIM, version {0} ******************".format(__version__))
+    logging.info("****************** Start SVIM-asm, version {0} ******************".format(__version__))
     logging.info("CMD: python3 {0}".format(" ".join(sys.argv)))
     logging.info("WORKING DIR: {0}".format(os.path.abspath(options.working_dir)))
     for arg in vars(options):

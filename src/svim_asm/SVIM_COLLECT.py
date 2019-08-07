@@ -1,8 +1,8 @@
 import logging
 import pysam
 
-from svim.SVIM_intra import analyze_alignment_indel
-from svim.SVIM_inter import analyze_read_segments
+from svim_asm.SVIM_intra import analyze_alignment_indel
+from svim_asm.SVIM_inter import analyze_read_segments
 
 
 def bam_iterator(bam):

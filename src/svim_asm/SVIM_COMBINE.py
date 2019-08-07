@@ -8,9 +8,9 @@ import time
 from statistics import mean, stdev
 from pysam import FastaFile
 
-from svim.SVIM_clustering import form_partitions, partition_and_cluster_candidates, calculate_score
-from svim.SVCandidate import CandidateInversion, CandidateDuplicationTandem, CandidateDeletion, CandidateNovelInsertion, CandidateBreakend
-from svim.SVIM_merging import flag_cutpaste_candidates, merge_translocations_at_insertions, cluster_positions_simple
+from svim_asm.SVIM_clustering import form_partitions, partition_and_cluster_candidates, calculate_score
+from svim_asm.SVCandidate import CandidateInversion, CandidateDuplicationTandem, CandidateDeletion, CandidateNovelInsertion, CandidateBreakend
+from svim_asm.SVIM_merging import flag_cutpaste_candidates, merge_translocations_at_insertions, cluster_positions_simple
 
 
 def cluster_sv_candidates(int_duplication_candidates, options):
@@ -176,7 +176,7 @@ def write_final_vcf(int_duplication_candidates,
     # Sort and write entries to VCF
     svtype_counter = defaultdict(int)
     for source, entry, svtype in sorted_nicely(vcf_entries):
-        variant_id = "svim.{svtype}.{number}".format(svtype = svtype, number = svtype_counter[svtype] + 1)
+        variant_id = "svim_asm.{svtype}.{number}".format(svtype = svtype, number = svtype_counter[svtype] + 1)
         entry_with_id = entry.replace("PLACEHOLDERFORID", variant_id, 1)
         svtype_counter[svtype] += 1
         print(entry_with_id, file=vcf_output)

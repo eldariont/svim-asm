@@ -2,9 +2,9 @@ import unittest
 
 from random import uniform
 
-from svim.SVIM_clustering import partition_and_cluster
-from svim.SVSignature import SignatureDeletion
-from svim.SVIM_input_parsing import parse_arguments
+from svim_asm.SVIM_clustering import partition_and_cluster
+from svim_asm.SVSignature import SignatureDeletion
+from svim_asm.SVIM_input_parsing import parse_arguments
 
 class TestSVIMClustering(unittest.TestCase):
     def setUp(self):

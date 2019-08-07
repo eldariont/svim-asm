@@ -2,7 +2,7 @@ import unittest
 import pysam
 import os
 
-from svim.SVIM_COLLECT import retrieve_other_alignments
+from svim_asm.SVIM_COLLECT import retrieve_other_alignments
 
 class TestSAExtraction(unittest.TestCase):
     def setUp(self):

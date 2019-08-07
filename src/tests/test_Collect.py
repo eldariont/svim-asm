@@ -2,8 +2,8 @@ import unittest
 import pysam
 import tempfile
 
-from svim.SVIM_COLLECT import bam_iterator, analyze_alignment_file_querysorted, retrieve_other_alignments
-from svim.SVIM_input_parsing import parse_arguments
+from svim_asm.SVIM_COLLECT import bam_iterator, analyze_alignment_file_querysorted, retrieve_other_alignments
+from svim_asm.SVIM_input_parsing import parse_arguments
 from random import choice, triangular, uniform
 
 class TestCollect(unittest.TestCase):

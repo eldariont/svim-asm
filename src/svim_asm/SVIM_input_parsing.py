@@ -17,8 +17,8 @@ SVIM consists of four major steps:
 - COMBINE combines clusters from different genomic regions and classifies them into distinct SV types
 - GENOTYPE uses alignments spanning SVs to determine their genotype
 
-SVIM can process two types of input. Firstly, it can detect SVs from raw reads by aligning them to a given reference genome first ("SVIM.py reads [options] working_dir reads genome").
-Alternatively, it can detect SVs from existing reads alignments in SAM/BAM format ("SVIM.py alignment [options] working_dir bam_file").
+SVIM can process two types of input. Firstly, it can detect SVs from raw reads by aligning them to a given reference genome first ("svim-asm.py reads [options] working_dir reads genome").
+Alternatively, it can detect SVs from existing reads alignments in SAM/BAM format ("svim-asm.py alignment [options] working_dir bam_file").
 """)
 
     subparsers = parser.add_subparsers(help='modes', dest='sub')

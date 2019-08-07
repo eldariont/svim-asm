@@ -1,8 +1,8 @@
 import os
 import logging
 
-from svim.SVIM_clustering import partition_and_cluster
-from svim.SVSignature import SignatureTranslocation
+from svim_asm.SVIM_clustering import partition_and_cluster
+from svim_asm.SVSignature import SignatureTranslocation
 
 
 def complete_translocations(translocation_signatures):

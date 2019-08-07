@@ -1,6 +1,6 @@
 import unittest
 
-from svim.SVSignature import SignatureDeletion,SignatureInsertion
+from svim_asm.SVSignature import SignatureDeletion,SignatureInsertion
 
 class TestSVSignature(unittest.TestCase):
 

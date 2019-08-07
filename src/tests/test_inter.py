@@ -1,6 +1,6 @@
 import unittest
 
-from svim.SVIM_inter import is_similar
+from svim_asm.SVIM_inter import is_similar
 
 class TestSVIMInter(unittest.TestCase):
 
