@@ -1,20 +1,13 @@
 class Candidate:
     """Candidate class for structural variant candidates. Candidates reflect the final SV types and can be merged from signatures of several reads.
     """
-    def __init__(self, source_contig, source_start, source_end, members, score, std_span, std_pos, support_fraction = ".", genotype = "./.", ref_reads = None, alt_reads = None):
+    def __init__(self, source_contig, source_start, source_end, genotype = "1/1"):
         self.source_contig = source_contig
         self.source_start = source_start
         self.source_end = source_end
-        
-        self.members = members
-        self.score = score
-        self.std_span = std_span
-        self.std_pos = std_pos
+
         self.type = None
-        self.support_fraction = support_fraction
         self.genotype = genotype
-        self.ref_reads = ref_reads
-        self.alt_reads = alt_reads
 
 
     def get_source(self):
@@ -38,209 +31,140 @@ class Candidate:
             return float("inf")
 
 
-    def get_std_span(self, ndigits=2):
-        if self.std_span:
-            return round(self.std_span, ndigits)
-        else:
-            return "."
-
-
-    def get_std_pos(self, ndigits=2):
-        if self.std_pos:
-            return round(self.std_pos, ndigits)
-        else:
-            return "."
-
-    def get_bed_entry(self):
-        return "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}".format(self.source_contig, self.source_start, self.source_end, "{0};{1};{2}".format(self.type, self.get_std_span(), self.get_std_pos()), self.score, ".", "["+"][".join([ev.as_string("|") for ev in self.members])+"]")
-
-
     def get_vcf_entry(self):
         raise NotImplementedError
 
 
 class CandidateDeletion(Candidate):
-    def __init__(self, source_contig, source_start, source_end, members, score, std_span, std_pos, support_fraction = ".", genotype = "./.", ref_reads = None, alt_reads = None):
+    def __init__(self, source_contig, source_start, source_end, reads, genotype = "1/1"):
         self.source_contig = source_contig
         #0-based start of the deletion (first deleted base)
         self.source_start = source_start
         #0-based end of the deletion (one past the last deleted base)
         self.source_end = source_end
 
-        self.members = members
-        self.score = score
-        self.std_span = std_span
-        self.std_pos = std_pos
         self.type = "DEL"
-        self.support_fraction = support_fraction
+        self.reads = reads
         self.genotype = genotype
-        self.ref_reads = ref_reads
-        self.alt_reads = alt_reads
 
 
     def get_vcf_entry(self, sequence_alleles = False, reference = None, read_names = False):
         contig, start, end = self.get_source()
-        if self.ref_reads != None and self.alt_reads != None:
-            dp_string = str(self.ref_reads + self.alt_reads)
-        else:
-            dp_string = "."
         filters = []
-        if self.score < 5:
-            filters.append("q5")
-        if self.genotype == 0:
-            filters.append("hom_ref")
         if sequence_alleles:
             ref_allele = reference.fetch(contig, max(0, start-1), end).upper()
             alt_allele = reference.fetch(contig, max(0, start-1), start).upper()
         else:
             ref_allele = "N"
             alt_allele = "<" + self.type + ">"
-        info_template="SVTYPE={0};END={1};SVLEN={2};SUPPORT={3};STD_SPAN={4};STD_POS={5}"
+        info_template="SVTYPE={0};END={1};SVLEN={2}"
         info_string = info_template.format(self.type, 
                                            end, 
-                                           start - end, 
-                                           len(set([sig.read for sig in self.members])), 
-                                           self.get_std_span(), 
-                                           self.get_std_pos())
+                                           start - end)
         if read_names:
-            read_ids = [member.read for member in self.members]
-            info_string += ";READS={0}".format(",".join(read_ids))
+            info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=contig,
                     pos=start,
                     id="PLACEHOLDERFORID",
                     ref=ref_allele,
                     alt=alt_allele,
-                    qual=int(self.score),
+                    qual=".",
                     filter="PASS" if len(filters) == 0 else ";".join(filters),
                     info=info_string,
-                    format="GT:DP:AD",
-                    samples="{gt}:{dp}:{ref},{alt}".format(gt=self.genotype, dp=dp_string, ref=self.ref_reads if self.ref_reads != None else ".", alt=self.alt_reads if self.alt_reads != None else "."))
+                    format="GT",
+                    samples="{gt}".format(gt=self.genotype))
 
 
 class CandidateInversion(Candidate):
-    def __init__(self, source_contig, source_start, source_end, members, score, std_span, std_pos, support_fraction = ".", genotype = "./.", ref_reads = None, alt_reads = None):
+    def __init__(self, source_contig, source_start, source_end, reads, direction, genotype = "1/1"):
         self.source_contig = source_contig
         #0-based start of the inversion (first inverted base)
         self.source_start = source_start
         #0-based end of the inversion (one past the last inverted base)
         self.source_end = source_end
 
-        self.members = members
-        self.score = score
-        self.std_span = std_span
-        self.std_pos = std_pos
         self.type = "INV"
-        self.support_fraction = support_fraction
+        self.reads = reads
+        self.direction = direction
         self.genotype = genotype
-        self.ref_reads = ref_reads
-        self.alt_reads = alt_reads
 
         self.complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
 
 
     def get_vcf_entry(self, sequence_alleles = False, reference = None, read_names = False):
         contig, start, end = self.get_source()
-        if self.ref_reads != None and self.alt_reads != None:
-            dp_string = str(self.ref_reads + self.alt_reads)
-        else:
-            dp_string = "."
         filters = []
-        if self.score < 5:
-            filters.append("q5")
-        if self.genotype == 0:
-            filters.append("hom_ref")
         if sequence_alleles:
             ref_allele = reference.fetch(contig, start, end).upper()
             alt_allele = "".join(self.complement.get(base.upper(), base.upper()) for base in reversed(ref_allele))
         else:
             ref_allele = "N"
             alt_allele = "<" + self.type + ">"
-        info_template="SVTYPE={0};END={1};SUPPORT={2};STD_SPAN={3};STD_POS={4}"
+        info_template="SVTYPE={0};END={1}"
         info_string = info_template.format(self.type, 
-                                            end, 
-                                            len(set([sig.read for sig in self.members])), 
-                                            self.get_std_span(), 
-                                            self.get_std_pos())
+                                            end)
         if read_names:
-            read_ids = [member.read for member in self.members]
-            info_string += ";READS={0}".format(",".join(read_ids))
+            info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=contig,
                     pos=start+1,
                     id="PLACEHOLDERFORID",
                     ref=ref_allele,
                     alt=alt_allele,
-                    qual=int(self.score),
+                    qual=".",
                     filter="PASS" if len(filters) == 0 else ";".join(filters),
                     info=info_string,
-                    format="GT:DP:AD",
-                    samples="{gt}:{dp}:{ref},{alt}".format(gt=self.genotype, dp=dp_string, ref=self.ref_reads if self.ref_reads != None else ".", alt=self.alt_reads if self.alt_reads != None else "."))
+                    format="GT",
+                    samples="{gt}".format(gt=self.genotype))
 
 
-class CandidateNovelInsertion(Candidate):
-    def __init__(self, dest_contig, dest_start, dest_end, members, score, std_span, std_pos, support_fraction = ".", genotype = "./.", ref_reads = None, alt_reads = None):
+class CandidateInsertion(Candidate):
+    def __init__(self, dest_contig, dest_start, dest_end, reads, sequence, genotype = "1/1"):
         self.dest_contig = dest_contig
         #0-based start of the insertion (base after the insertion)
         self.dest_start = dest_start
         #0-based start of the insertion (base after the insertion) + length of the insertion
         self.dest_end = dest_end
 
-        self.members = members
-        self.score = score
-        self.std_span = std_span
-        self.std_pos = std_pos
         self.type = "INS"
-        self.support_fraction = support_fraction
+        self.reads = reads
+        self.sequence = sequence
         self.genotype = genotype
-        self.ref_reads = ref_reads
-        self.alt_reads = alt_reads
 
     def get_destination(self):
         return (self.dest_contig, self.dest_start, self.dest_end)
 
-    def get_bed_entry(self):
-        return "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}".format(self.dest_contig, self.dest_start, self.dest_end, "{0};{1};{2}".format(self.type, self.get_std_span(), self.get_std_pos()), self.score, ".", "["+"][".join([ev.as_string("|") for ev in self.members])+"]")
-
-    def get_vcf_entry(self, insertion_sequences = False, read_names = False):
+    def get_vcf_entry(self, sequence_alleles = False, reference = None, read_names = False):
         contig, start, end = self.get_destination()
-        if self.ref_reads != None and self.alt_reads != None:
-            dp_string = str(self.ref_reads + self.alt_reads)
-        else:
-            dp_string = "."
         filters = []
-        if self.score < 5:
-            filters.append("q5")
-        if self.genotype == 0:
-            filters.append("hom_ref")
-        info_template="SVTYPE={0};END={1};SVLEN={2};SUPPORT={3};STD_SPAN={4};STD_POS={5}"
+        if sequence_alleles:
+            ref_allele = reference.fetch(contig, start, start + 1).upper()
+            alt_allele = ref_allele + self.sequence
+        else:
+            ref_allele = "N"
+            alt_allele = "<" + self.type + ">"
+        info_template="SVTYPE={0};END={1};SVLEN={2}"
         info_string = info_template.format(self.type, 
                                            start, 
-                                           end - start, 
-                                           len(set([sig.read for sig in self.members])), 
-                                           self.get_std_span(), 
-                                           self.get_std_pos()) 
-        if insertion_sequences:
-            insertion_seqs = [member.sequence for member in self.members]
-            info_string += ";SEQS={0}".format(",".join(insertion_seqs))
+                                           end - start) 
         if read_names:
-            read_ids = [member.read for member in self.members]
-            info_string += ";READS={0}".format(",".join(read_ids))
+            info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=contig,
                     pos=start,
                     id="PLACEHOLDERFORID",
-                    ref="N",
-                    alt="<" + self.type + ">",
-                    qual=int(self.score),
+                    ref=ref_allele,
+                    alt=alt_allele,
+                    qual=".",
                     filter="PASS" if len(filters) == 0 else ";".join(filters),
                     info=info_string,
-                    format="GT:DP:AD",
-                    samples="{gt}:{dp}:{ref},{alt}".format(gt=self.genotype, dp=dp_string, ref=self.ref_reads if self.ref_reads != None else ".", alt=self.alt_reads if self.alt_reads != None else "."))
+                    format="GT",
+                    samples="{gt}".format(gt=self.genotype))
 
 
 class CandidateDuplicationTandem(Candidate):
-    def __init__(self, source_contig, source_start, source_end, copies, fully_covered, members, score, std_span, std_pos, support_fraction = ".", genotype = "./.", ref_reads = None, alt_reads = None):
+    def __init__(self, source_contig, source_start, source_end, copies, fully_covered, reads, genotype = "1/1"):
         self.source_contig = source_contig
         #0-based start of the region (first copied base)
         self.source_start = source_start
@@ -249,16 +173,10 @@ class CandidateDuplicationTandem(Candidate):
         
         self.copies = copies
 
-        self.members = members
-        self.score = score
-        self.std_span = std_span
-        self.std_pos = std_pos
         self.type = "DUP_TAN"
-        self.support_fraction = support_fraction
-        self.genotype = genotype
-        self.ref_reads = ref_reads
-        self.alt_reads = alt_reads
+        self.reads = reads
         self.fully_covered = fully_covered
+        self.genotype = genotype
 
 
     def get_destination(self):
@@ -266,64 +184,37 @@ class CandidateDuplicationTandem(Candidate):
         return (source_contig, source_end, source_end + self.copies * (source_end - source_start))
 
 
-    def get_bed_entries(self, sep="\t"):
-        source_contig, source_start, source_end = self.get_source()
-        dest_contig, dest_start, dest_end = self.get_destination()
-        source_entry = sep.join(["{0}", "{1}", "{2}", "{3}", "{4}", "{5}", "{6}"]).format(source_contig, source_start,
-                                                                                     source_end,
-                                                                                     "tan_dup_source;>{0}:{1}-{2};{3};{4}".format(
-                                                                                         dest_contig, dest_start,
-                                                                                         dest_end, self.get_std_span(), self.get_std_pos()), self.score, ".",
-                                                                                     "[" + "][".join(
-                                                                                         [ev.as_string("|") for ev in
-                                                                                          self.members]) + "]")
-        dest_entry = sep.join(["{0}", "{1}", "{2}", "{3}", "{4}", "{5}", "{6}"]).format(dest_contig, dest_start, dest_end,
-                                                                                   "tan_dup_dest;<{0}:{1}-{2};{3};{4}".format(
-                                                                                       source_contig, source_start,
-                                                                                       source_end, self.get_std_span(), self.get_std_pos()), self.score, ".",
-                                                                                   "[" + "][".join(
-                                                                                       [ev.as_string("|") for ev in
-                                                                                        self.members]) + "]")
-        return (source_entry, dest_entry)
-
-
-    def get_vcf_entry_as_ins(self, read_names = False):
+    def get_vcf_entry_as_ins(self, sequence_alleles = False, reference = None, read_names = False):
         contig = self.source_contig
         start = self.source_end
         end = self.source_end + self.copies * (self.source_end - self.source_start)
         svtype = "INS"
-        if self.ref_reads != None and self.alt_reads != None:
-            dp_string = str(self.ref_reads + self.alt_reads)
-        else:
-            dp_string = "."
         filters = []
-        if self.score < 5:
-            filters.append("q5")
-        if self.genotype == 0:
-            filters.append("hom_ref")
+        if sequence_alleles:
+            ref_allele = reference.fetch(contig, self.source_start, self.source_end).upper()
+            alt_allele = ref_allele * (self.copies + 1)
+        else:
+            ref_allele = "N"
+            alt_allele = "<" + svtype + ">"
         if not(self.fully_covered):
             filters.append("not_fully_covered")
-        info_template="SVTYPE={0};END={1};SVLEN={2};SUPPORT={3};STD_SPAN={4};STD_POS={5}"
+        info_template="SVTYPE={0};END={1};SVLEN={2}"
         info_string = info_template.format(svtype, 
                                            start, 
-                                           end - start, 
-                                           len(set([sig.read for sig in self.members])), 
-                                           self.get_std_span(), 
-                                           self.get_std_pos())
+                                           end - start)
         if read_names:
-            read_ids = [member.read for member in self.members]
-            info_string += ";READS={0}".format(",".join(read_ids))
+            info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=contig,
                     pos=start,
                     id="PLACEHOLDERFORID",
-                    ref="N",
-                    alt="<" + svtype + ">",
-                    qual=int(self.score),
+                    ref=ref_allele,
+                    alt=alt_allele,
+                    qual=".",
                     filter="PASS" if len(filters) == 0 else ";".join(filters),
                     info=info_string,
-                    format="GT:DP:AD",
-                    samples="{gt}:{dp}:{ref},{alt}".format(gt=self.genotype, dp=dp_string, ref=self.ref_reads if self.ref_reads != None else ".", alt=self.alt_reads if self.alt_reads != None else "."))
+                    format="GT",
+                    samples="{gt}".format(gt=self.genotype))
 
 
     def get_vcf_entry_as_dup(self, read_names = False):
@@ -332,42 +223,30 @@ class CandidateDuplicationTandem(Candidate):
         end = self.source_end
         length = self.copies * (self.source_end - self.source_start)
         svtype = "DUP:TANDEM"
-        if self.ref_reads != None and self.alt_reads != None:
-            dp_string = str(self.ref_reads + self.alt_reads)
-        else:
-            dp_string = "."
         filters = []
-        if self.score < 5:
-            filters.append("q5")
-        if self.genotype == 0:
-            filters.append("hom_ref")
         if not(self.fully_covered):
             filters.append("not_fully_covered")
-        info_template="SVTYPE={0};END={1};SVLEN={2};SUPPORT={3};STD_SPAN={4};STD_POS={5}"
+        info_template="SVTYPE={0};END={1};SVLEN={2}"
         info_string = info_template.format(svtype, 
                                            end, 
-                                           length, 
-                                           len(set([sig.read for sig in self.members])), 
-                                           self.get_std_span(), 
-                                           self.get_std_pos())
+                                           length)
         if read_names:
-            read_ids = [member.read for member in self.members]
-            info_string += ";READS={0}".format(",".join(read_ids))
+            info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=contig,
                     pos=start,
                     id="PLACEHOLDERFORID",
                     ref="N",
                     alt="<" + svtype + ">",
-                    qual=int(self.score),
+                    qual=".",
                     filter="PASS" if len(filters) == 0 else ";".join(filters),
                     info=info_string,
-                    format="GT:DP:AD",
-                    samples="{gt}:{dp}:{ref},{alt}".format(gt=self.genotype, dp=dp_string, ref=self.ref_reads if self.ref_reads != None else ".", alt=self.alt_reads if self.alt_reads != None else "."))
+                    format="GT",
+                    samples="{gt}".format(gt=self.genotype))
 
 
 class CandidateDuplicationInterspersed(Candidate):
-    def __init__(self, source_contig, source_start, source_end, dest_contig, dest_start, dest_end, members, score, std_span, std_pos, cutpaste=False, support_fraction = ".", genotype = "./.", ref_reads = None, alt_reads = None):
+    def __init__(self, source_contig, source_start, source_end, dest_contig, dest_start, dest_end, reads, cutpaste=False, genotype = "1/1"):
         self.source_contig = source_contig
         #0-based start of the region (first copied base)
         self.source_start = source_start
@@ -380,117 +259,72 @@ class CandidateDuplicationInterspersed(Candidate):
         #0-based end of the insertion (base after the insertion) + length of the insertion
         self.dest_end = dest_end
 
-        self.members = members
-        self.score = score
-        self.std_span = std_span
-        self.std_pos = std_pos
         self.cutpaste= cutpaste
         self.type = "DUP_INT"
-        self.support_fraction = support_fraction
+        self.reads = reads
         self.genotype = genotype
-        self.ref_reads = ref_reads
-        self.alt_reads = alt_reads
 
 
     def get_destination(self):
         return (self.dest_contig, self.dest_start, self.dest_end)
 
 
-    def get_bed_entries(self, sep="\t"):
-        source_contig, source_start, source_end = self.get_source()
-        dest_contig, dest_start, dest_end = self.get_destination()
-        source_entry = sep.join(["{0}", "{1}", "{2}", "{3}", "{4}", "{5}", "{6}"]).format(source_contig, source_start,
-                                                                                     source_end,
-                                                                                     "int_dup_source;>{0}:{1}-{2};{3};{4}".format(
-                                                                                         dest_contig, dest_start,
-                                                                                         dest_end, self.get_std_span(), self.get_std_pos()), self.score, "origin potentially deleted" if self.cutpaste else ".",
-                                                                                     "[" + "][".join(
-                                                                                         [ev.as_string("|") for ev in
-                                                                                          self.members]) + "]")
-        dest_entry = sep.join(["{0}", "{1}", "{2}", "{3}", "{4}", "{5}", "{6}"]).format(dest_contig, dest_start, dest_end,
-                                                                                   "int_dup_dest;<{0}:{1}-{2};{3};{4}".format(
-                                                                                       source_contig, source_start,
-                                                                                       source_end, self.get_std_span(), self.get_std_pos()), self.score, "origin potentially deleted" if self.cutpaste else ".",
-                                                                                   "[" + "][".join(
-                                                                                       [ev.as_string("|") for ev in
-                                                                                        self.members]) + "]")
-        return (source_entry, dest_entry)
-
-
-    def get_vcf_entry_as_ins(self, read_names = False):
+    def get_vcf_entry_as_ins(self, sequence_alleles = False, reference = None, read_names = False):
         contig, start, end = self.get_destination()
         svtype = "INS"
-        if self.ref_reads != None and self.alt_reads != None:
-            dp_string = str(self.ref_reads + self.alt_reads)
-        else:
-            dp_string = "."
         filters = []
-        if self.score < 5:
-            filters.append("q5")
-        if self.genotype == 0:
-            filters.append("hom_ref")
-        info_template="SVTYPE={0};{1}END={2};SVLEN={3};SUPPORT={4};STD_SPAN={5};STD_POS={6}"
+        if sequence_alleles:
+            ref_allele = reference.fetch(contig, start, start + 1).upper()
+            alt_allele = ref_allele + reference.fetch(self.source_contig, self.source_start, self.source_end).upper()
+        else:
+            ref_allele = "N"
+            alt_allele = "<" + svtype + ">"
+        info_template="SVTYPE={0};{1}END={2};SVLEN={3}"
         info_string = info_template.format(svtype, 
                                            "CUTPASTE;" if self.cutpaste else "", 
                                            start, 
-                                           end - start, 
-                                           len(set([sig.read for sig in self.members])), 
-                                           self.get_std_span(), 
-                                           self.get_std_pos())
+                                           end - start)
         if read_names:
-            read_ids = [member.read for member in self.members]
-            info_string += ";READS={0}".format(",".join(read_ids))
+            info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=contig,
                     pos=start,
                     id="PLACEHOLDERFORID",
-                    ref="N",
-                    alt="<" + svtype + ">",
-                    qual=int(self.score),
+                    ref=ref_allele,
+                    alt=alt_allele,
+                    qual=".",
                     filter="PASS" if len(filters) == 0 else ";".join(filters),
                     info=info_string,
-                    format="GT:DP:AD",
-                    samples="{gt}:{dp}:{ref},{alt}".format(gt=self.genotype, dp=dp_string, ref=self.ref_reads if self.ref_reads != None else ".", alt=self.alt_reads if self.alt_reads != None else "."))
+                    format="GT",
+                    samples="{gt}".format(gt=self.genotype))
 
 
     def get_vcf_entry_as_dup(self, read_names = False):
         contig, start, end = self.get_source()
         svtype = "DUP_INT"
-        if self.ref_reads != None and self.alt_reads != None:
-            dp_string = str(self.ref_reads + self.alt_reads)
-        else:
-            dp_string = "."
         filters = []
-        if self.score < 5:
-            filters.append("q5")
-        if self.genotype == 0:
-            filters.append("hom_ref")
-        info_template="SVTYPE={0};{1}END={2};SVLEN={3};SUPPORT={4};STD_SPAN={5};STD_POS={6}"
+        info_template="SVTYPE={0};{1}END={2};SVLEN={3}"
         info_string = info_template.format(svtype, 
                                            "CUTPASTE;" if self.cutpaste else "", 
                                            end, 
-                                           end - start, 
-                                           len(set([sig.read for sig in self.members])), 
-                                           self.get_std_span(), 
-                                           self.get_std_pos())
+                                           end - start)
         if read_names:
-            read_ids = [member.read for member in self.members]
-            info_string += ";READS={0}".format(",".join(read_ids))
+            info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=contig,
                     pos=start,
                     id="PLACEHOLDERFORID",
                     ref="N",
                     alt="<" + svtype + ">",
-                    qual=int(self.score),
+                    qual=".",
                     filter="PASS" if len(filters) == 0 else ";".join(filters),
                     info=info_string,
-                    format="GT:DP:AD",
-                    samples="{gt}:{dp}:{ref},{alt}".format(gt=self.genotype, dp=dp_string, ref=self.ref_reads if self.ref_reads != None else ".", alt=self.alt_reads if self.alt_reads != None else "."))
+                    format="GT",
+                    samples="{gt}".format(gt=self.genotype))
 
 
 class CandidateBreakend(Candidate):
-    def __init__(self, source_contig, source_start, source_direction, dest_contig, dest_start, dest_direction, members, score, std_pos1, std_pos2, support_fraction = ".", genotype = "./.", ref_reads = None, alt_reads = None):
+    def __init__(self, source_contig, source_start, source_direction, dest_contig, dest_start, dest_direction, reads, genotype = "1/1"):
         self.source_contig = source_contig
         #0-based source of the translocation (first base before the translocation)
         self.source_start = source_start
@@ -501,15 +335,9 @@ class CandidateBreakend(Candidate):
         self.dest_start = dest_start
         self.dest_direction = dest_direction
 
-        self.members = members
-        self.score = score
-        self.std_pos1 = std_pos1
-        self.std_pos2 = std_pos2
         self.type = "BND"
-        self.support_fraction = support_fraction
+        self.reads = reads
         self.genotype = genotype
-        self.ref_reads = ref_reads
-        self.alt_reads = alt_reads
 
 
     def get_source(self):
@@ -518,42 +346,6 @@ class CandidateBreakend(Candidate):
 
     def get_destination(self):
         return (self.dest_contig, self.dest_start)
-
-
-    def get_std_pos1(self, ndigits=2):
-        if self.std_pos1:
-            return round(self.std_pos1, ndigits)
-        else:
-            return "."
-
-
-    def get_std_pos2(self, ndigits=2):
-        if self.std_pos2:
-            return round(self.std_pos2, ndigits)
-        else:
-            return "."
-
-
-    def get_bed_entries(self, sep="\t"):
-        source_contig, source_start = self.get_source()
-        dest_contig, dest_start = self.get_destination()
-        source_entry = sep.join(["{0}", "{1}", "{2}", "{3}", "{4}", "{5}"]).format(source_contig, 
-                                                                                   source_start,
-                                                                                   source_start + 1,
-                                                                                   "bnd;>{0}:{1};{2};{3}".format(
-                                                                                        dest_contig, dest_start, self.get_std_pos1(), self.get_std_pos2()), 
-                                                                                   self.score, 
-                                                                                   "[" + "][".join(
-                                                                                        [ev.as_string("|") for ev in self.members]) + "]")
-        dest_entry = sep.join(["{0}", "{1}", "{2}", "{3}", "{4}", "{5}"]).format(dest_contig, 
-                                                                                 dest_start, 
-                                                                                 dest_start + 1,
-                                                                                 "bnd;<{0}:{1};{2};{3}".format(
-                                                                                        source_contig, source_start, self.get_std_pos1(), self.get_std_pos2()), 
-                                                                                 self.score,
-                                                                                 "[" + "][".join(
-                                                                                        [ev.as_string("|") for ev in self.members]) + "]")
-        return (source_entry, dest_entry)
 
 
     def get_vcf_entry(self, read_names = False):
@@ -567,31 +359,19 @@ class CandidateBreakend(Candidate):
             alt_string = "]{contig}:{start}]N".format(contig = dest_contig, start = dest_start)
         elif (self.source_direction == 'rev') and (self.dest_direction == 'fwd'):
             alt_string = "[{contig}:{start}[N".format(contig = dest_contig, start = dest_start)
-        if self.ref_reads != None and self.alt_reads != None:
-            dp_string = str(self.ref_reads + self.alt_reads)
-        else:
-            dp_string = "."
         filters = []
-        if self.score < 5:
-            filters.append("q5")
-        if self.genotype == 0:
-            filters.append("hom_ref")
-        info_template="SVTYPE={0};SUPPORT={1};STD_POS1={2};STD_POS2={3}"
-        info_string = info_template.format(self.type, 
-                                           len(set([sig.read for sig in self.members])), 
-                                           self.get_std_pos1(), 
-                                           self.get_std_pos2())
+        info_template="SVTYPE={0}"
+        info_string = info_template.format(self.type)
         if read_names:
-            read_ids = [member.read for member in self.members]
-            info_string += ";READS={0}".format(",".join(read_ids))
+            info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=source_contig,
                     pos=source_start,
                     id="PLACEHOLDERFORID",
                     ref="N",
                     alt=alt_string,
-                    qual=int(self.score),
+                    qual=".",
                     filter="PASS" if len(filters) == 0 else ";".join(filters),
                     info=info_string,
-                    format="GT:DP:AD",
-                    samples="{gt}:{dp}:{ref},{alt}".format(gt=self.genotype, dp=dp_string, ref=self.ref_reads if self.ref_reads != None else ".", alt=self.alt_reads if self.alt_reads != None else "."))
+                    format="GT",
+                    samples="{gt}".format(gt=self.genotype))

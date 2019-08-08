@@ -13,13 +13,10 @@ import pysam
 
 from time import strftime, localtime
 
-from svim_asm.SVIM_input_parsing import parse_arguments, guess_file_type, read_file_list
-from svim_asm.SVIM_alignment import run_alignment
-from svim_asm.SVIM_COLLECT import analyze_alignment_file_coordsorted, analyze_alignment_file_querysorted
-from svim_asm.SVIM_CLUSTER import cluster_sv_signatures, write_signature_clusters_bed, write_signature_clusters_vcf
-from svim_asm.SVIM_COMBINE import combine_clusters, write_candidates, write_final_vcf
-from svim_asm.SVIM_genotyping import genotype
-from svim_asm.SVIM_plot import plot_sv_lengths, plot_sv_alleles
+from svim_asm.SVIM_input_parsing import parse_arguments
+from svim_asm.SVIM_COLLECT import analyze_alignment_file_coordsorted
+from svim_asm.SVIM_COMBINE import write_final_vcf
+from svim_asm.SVIM_plot import plot_sv_lengths
 
 
 def main():
@@ -27,7 +24,7 @@ def main():
     options = parse_arguments(program_version=__version__)
 
     if not options.sub:
-        print("Please choose one of the two modes ('reads' or 'alignment'). See --help for more information.")
+        print("Please choose one of the two modes ('alignment'). See --help for more information.")
         return
 
     # Set up logging
@@ -62,7 +59,7 @@ def main():
         aln_file = pysam.AlignmentFile(options.bam_file)
         try:
             if aln_file.header["HD"]["SO"] == "coordinate":
-                sv_signatures = analyze_alignment_file_coordsorted(aln_file, options)
+                sv_candidates = analyze_alignment_file_coordsorted(aln_file, options)
             else:
                 logging.error("Input BAM file needs to be coordinate-sorted. Exiting..")
                 return
@@ -70,60 +67,29 @@ def main():
             logging.error("Is the given input BAM file coordinate-sorted? It does not contain a sorting order in its header line.")
             return
 
-    deletion_signatures = [ev for ev in sv_signatures if ev.type == "DEL"]
-    insertion_signatures = [ev for ev in sv_signatures if ev.type == "INS"]
-    inversion_signatures = [ev for ev in sv_signatures if ev.type == "INV"]
-    tandem_duplication_signatures = [ev for ev in sv_signatures if ev.type == "DUP_TAN"]
-    translocation_signatures = [ev for ev in sv_signatures if ev.type == "BND"]
-    insertion_from_signatures = [ev for ev in sv_signatures if ev.type == "DUP_INT"]
+    deletion_candidates = [cand for cand in sv_candidates if cand.type == "DEL"]
+    insertion_candidates = [cand for cand in sv_candidates if cand.type == "INS"]
+    inversion_candidates = [cand for cand in sv_candidates if cand.type == "INV"]
+    tandem_duplication_candidates = [cand for cand in sv_candidates if cand.type == "DUP_TAN"]
+    breakend_candidates = [cand for cand in sv_candidates if cand.type == "BND"]
+    interspersed_duplication_candidates = [cand for cand in sv_candidates if cand.type == "DUP_INT"]
 
-    logging.info("Found {0} signatures for deleted regions.".format(len(deletion_signatures)))
-    logging.info("Found {0} signatures for inserted regions.".format(len(insertion_signatures)))
-    logging.info("Found {0} signatures for inverted regions.".format(len(inversion_signatures)))
-    logging.info("Found {0} signatures for tandem duplicated regions.".format(len(tandem_duplication_signatures)))
-    logging.info("Found {0} signatures for translocation breakpoints.".format(len(translocation_signatures)))
-    logging.info("Found {0} signatures for inserted regions with detected region of origin.".format(len(insertion_from_signatures)))
+    logging.info("Found {0} deletion candidates.".format(len(deletion_candidates)))
+    logging.info("Found {0} insertion candidates.".format(len(insertion_candidates)))
+    logging.info("Found {0} inversion candidates.".format(len(inversion_candidates)))
+    logging.info("Found {0} tandem duplication candidates.".format(len(tandem_duplication_candidates)))
+    logging.info("Found {0} breakend candidates.".format(len(breakend_candidates)))
+    logging.info("Found {0} interspersed duplicationcandidates.".format(len(interspersed_duplication_candidates)))
     
-    logging.info("****************** STEP 2: CLUSTER ******************")
-    signature_clusters = cluster_sv_signatures(sv_signatures, options)
-
-    # Write SV signature clusters
-    logging.info("Finished clustering. Writing signature clusters..")
-    write_signature_clusters_bed(options.working_dir, signature_clusters)
-    write_signature_clusters_vcf(options.working_dir, signature_clusters, __version__)
-
-    logging.info("****************** STEP 3: COMBINE ******************")
-    deletion_candidates, inversion_candidates, int_duplication_candidates, tan_dup_candidates, novel_insertion_candidates, breakend_candidates = combine_clusters(signature_clusters, options)
-
-    if not options.skip_genotyping:
-        if aln_file.header["HD"]["SO"] == "coordinate":
-            logging.info("****************** STEP 4: GENOTYPE ******************")
-            logging.info("Genotyping deletions..")
-            genotype(deletion_candidates, aln_file, "DEL", options)
-            logging.info("Genotyping inversions..")
-            genotype(inversion_candidates, aln_file, "INV", options)
-            logging.info("Genotyping novel insertions..")
-            genotype(novel_insertion_candidates, aln_file, "INS", options)
-            logging.info("Genotyping interspersed duplications..")
-            genotype(int_duplication_candidates, aln_file, "DUP_INT", options)
-        elif aln_file.header["HD"]["SO"] == "queryname":
-            logging.warning("Skipping genotyping because it requires a coordinate-sorted input BAM file. The given file, however, is queryname-sorted according to its header line.")
-
+    logging.info("****************** STEP 2: OUTPUT ******************")
     # Write SV candidates
     logging.info("Write SV candidates..")
-    logging.info("Final deletion candidates: {0}".format(len(deletion_candidates)))
-    logging.info("Final inversion candidates: {0}".format(len(inversion_candidates)))
-    logging.info("Final interspersed duplication candidates: {0}".format(len(int_duplication_candidates)))
-    logging.info("Final tandem duplication candidates: {0}".format(len(tan_dup_candidates)))
-    logging.info("Final novel insertion candidates: {0}".format(len(novel_insertion_candidates)))
-    logging.info("Final breakend candidates: {0}".format(len(breakend_candidates)))
-    write_candidates(options.working_dir, (int_duplication_candidates, inversion_candidates, tan_dup_candidates, deletion_candidates, novel_insertion_candidates, breakend_candidates))
     types_to_output = [entry.strip() for entry in options.types.split(",")]
-    write_final_vcf(int_duplication_candidates,
+    write_final_vcf(interspersed_duplication_candidates,
                     inversion_candidates,
-                    tan_dup_candidates,
+                    tandem_duplication_candidates,
                     deletion_candidates,
-                    novel_insertion_candidates,
+                    insertion_candidates,
                     breakend_candidates,
                     __version__,
                     aln_file.references,
@@ -131,9 +97,7 @@ def main():
                     types_to_output,
                     options)
     logging.info("Draw plots..")
-    plot_sv_lengths(deletion_candidates, inversion_candidates, int_duplication_candidates, tan_dup_candidates, novel_insertion_candidates, options)
-    if not options.skip_genotyping:
-        plot_sv_alleles(deletion_candidates + inversion_candidates + int_duplication_candidates + novel_insertion_candidates, options)
+    plot_sv_lengths(deletion_candidates, inversion_candidates, interspersed_duplication_candidates, tandem_duplication_candidates, insertion_candidates, options)
     logging.info("Done.")
 
 if __name__ == "__main__":

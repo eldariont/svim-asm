@@ -56,10 +56,10 @@ def retrieve_other_alignments(main_alignment, bam):
 
 def analyze_alignment_file_coordsorted(bam, options):
     chromosomes = bam.references
+    sv_candidates = []
     for current_chromosome in chromosomes:
         alignment_it = bam.fetch(contig = current_chromosome)
         logging.info("Processing chromosome {0}...".format(current_chromosome))
-        sv_signatures = []
 
         while True:
             try:
@@ -67,16 +67,13 @@ def analyze_alignment_file_coordsorted(bam, options):
                 if current_alignment.is_unmapped or current_alignment.is_secondary or current_alignment.mapping_quality < options.min_mapq:
                     continue
                 if current_alignment.is_supplementary:
-                    sv_signatures.extend(analyze_alignment_indel(current_alignment, bam, current_alignment.query_name, options))
+                    sv_candidates.extend(analyze_alignment_indel(current_alignment, bam, current_alignment.query_name, options))
                 else:
                     supplementary_alignments = retrieve_other_alignments(current_alignment, bam)
                     good_suppl_alns = [aln for aln in supplementary_alignments if not aln.is_unmapped and aln.mapping_quality >= options.min_mapq]
 
-                    sv_signatures.extend(analyze_alignment_indel(current_alignment, bam, current_alignment.query_name, options))
-                    sv_signatures.extend(analyze_read_segments(current_alignment, good_suppl_alns, bam, options))
+                    sv_candidates.extend(analyze_alignment_indel(current_alignment, bam, current_alignment.query_name, options))
+                    sv_candidates.extend(analyze_read_segments(current_alignment, good_suppl_alns, bam, options))
             except StopIteration:
                 break
-            except KeyboardInterrupt:
-                logging.warning('Execution interrupted by user. Stop detection and continue with next step..')
-                break
-        return sv_signatures
+    return sv_candidates

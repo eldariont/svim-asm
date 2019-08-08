@@ -6,19 +6,12 @@ import argparse
 
 def parse_arguments(program_version, arguments = sys.argv[1:]):
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     description="""SVIM (pronounced SWIM) is a structural variant caller for long reads. 
-It discriminates five different variant classes: deletions, tandem and interspersed duplications, 
-inversions and novel element insertions. SVIM is unique in its capability of extracting both the genomic origin and 
-destination of duplications.
+                                     description="""SVIM-asm (pronounced SWIM-assem) is a structural variant caller for genome-genome alignments. 
+It discriminates five different variant classes: deletions, insertions, tandem and interspersed duplications and inversions.
 
-SVIM consists of four major steps:
-- COLLECT detects signatures for SVs in long read alignments
-- CLUSTER merges signatures that come from the same SV
-- COMBINE combines clusters from different genomic regions and classifies them into distinct SV types
-- GENOTYPE uses alignments spanning SVs to determine their genotype
-
-SVIM can process two types of input. Firstly, it can detect SVs from raw reads by aligning them to a given reference genome first ("svim-asm.py reads [options] working_dir reads genome").
-Alternatively, it can detect SVs from existing reads alignments in SAM/BAM format ("svim-asm.py alignment [options] working_dir bam_file").
+SVIM consists of two major steps:
+- COLLECT detects SVs in genome-genome alignments in BAM format
+- OUTPUT prints the found SVs in VCF format
 """)
 
     subparsers = parser.add_subparsers(help='modes', dest='sub')
@@ -83,91 +76,7 @@ Alternatively, it can detect SVs from existing reads alignments in SAM/BAM forma
                                             far apart from each other on the reference. The segment overlap tolerance determines \
                                             the maximum tolerated length of an overlap between both segments on the read. If the \
                                             overlap between the two segments on the read is larger than this value, no deletion is called.')
-    group_bam_cluster = parser_bam.add_argument_group('CLUSTER')
-    group_bam_cluster.add_argument('--partition_max_distance',
-                                      type=int,
-                                      default=5000,
-                                      help='Maximum distance in bp between SVs in a partition (default: %(default)s). \
-                                            Before clustering, the SV signatures are divided into coarse partitions. This parameter \
-                                            determines the maximum distance between two signatures in the same partition. \
-                                            If the distance between two signatures (i.e. between their start, center and end positions) \
-                                            is larger than this parameter, they are distributed into separate partitions.')
-    group_bam_cluster.add_argument('--distance_normalizer',
-                                      type=int,
-                                      default=900,
-                                      help='Distance normalizer used for span-position distance (default: %(default)s). \
-                                            SVIM clusters the SV signatures using an hierarchical clustering approach and a \
-                                            novel distance metric called \"span-position distance\". Span-position distance \
-                                            is the sum of two components, span distance and position distance. \
-                                            The span distance is the difference in lengths between signatures normalized \
-                                            by the greater length and always lies in the interval [0,1]. \
-                                            The position distance is the difference in position between signatures \
-                                            normalized by the distance normalizer (this parameter). For a position difference \
-                                            of 1.8kb and a distance normalizer of 900, the position distance will be 2. \
-                                            A smaller distance normalizer leads to a higher position distance and as a \
-                                            consequence increases the importance of the position distance in the \
-                                            span-position distance relative to the span distance.')
-    group_bam_cluster.add_argument('--cluster_max_distance',
-                                      type=float,
-                                      default=0.3,
-                                      help='Maximum span-position distance between SVs in a cluster (default: %(default)s). \
-                                            This is the most important parameter because it determines the strictness \
-                                            of clustering. Choosing a large value leads to fewer but larger clusters with larger \
-                                            distances between its members. Choosing a small value leads to more but smaller \
-                                            clusters with smaller distances between its members. \
-                                            This parameter determines the height of the cut-off in the hierarchical clustering \
-                                            dendrogram.')
-    group_bam_combine = parser_bam.add_argument_group('COMBINE')
-    group_bam_combine.add_argument('--del_ins_dup_max_distance',
-                                      type=float,
-                                      default=1.0,
-                                      help='Maximum span-position distance between the origin of an insertion and a deletion to be flagged as a potential cut&paste insertion (default: %(default)s)')
-    group_bam_combine.add_argument('--trans_destination_partition_max_distance',
-                                      type=int,
-                                      default=1000,
-                                      help='Maximum distance in bp between translocation breakpoint destinations in a partition (default: %(default)s)')
-    group_bam_combine.add_argument('--trans_partition_max_distance',
-                                      type=int,
-                                      default=200,
-                                      help='Maximum distance in bp between translocation breakpoints in a partition (default: %(default)s)')
-    group_bam_combine.add_argument('--trans_sv_max_distance',
-                                      type=int,
-                                      default=500,
-                                      help='Maximum distance in bp between a translocation breakpoint and an SV signature to be combined (default: %(default)s)')
-    group_bam_genotype = parser_bam.add_argument_group('GENOTYPE')
-    group_bam_genotype.add_argument('--skip_genotyping',
-                                        action='store_true',
-                                        help='Disable genotyping (default: %(default)s)')
-    group_bam_genotype.add_argument('--minimum_score',
-                                      type=int,
-                                      default=3,
-                                      help='Minimum score for genotyping (default: %(default)s). \
-                                            Only SV candidates with a higher or equal score are genotyped. Depending on the \
-                                            score distribution among the SV candidates, decreasing this value increases the \
-                                            runtime. We recommend to choose a value close to the score threshold used \
-                                            for filtering the SV candidates.')
-    group_bam_genotype.add_argument('--homozygous_threshold',
-                                      type=float,
-                                      default=0.8,
-                                      help='Minimum variant allele frequency to be called as homozygous (default: %(default)s). \
-                                            Allele frequency is computed as the fraction of reads supporting the variant over the \
-                                            total number of reads covering the variant. Variants with an allele frequence greater \
-                                            than or equal to this threshold are called as homozygous alternative.')
-    group_bam_genotype.add_argument('--heterozygous_threshold',
-                                      type=float,
-                                      default=0.2,
-                                      help='Minimum variant allele frequency to be called as heterozygous (default: %(default)s). \
-                                            Allele frequency is computed as the fraction of reads supporting the variant over the \
-                                            total number of reads covering the variant. Variants with an allele frequence greater \
-                                            than or equal to this threshold but lower than the homozygous threshold are called as \
-                                            heterozygous alternative. Variants with an allele frequence lower than this threshold \
-                                            are called as homozygous reference.')
-    group_bam_genotype.add_argument('--minimum_depth',
-                                      type=int,
-                                      default=4,
-                                      help='Minimum total read depth for genotyping (default: %(default)s). \
-                                            Variants covered by a total number of reads lower than this value are not assigned \
-                                            a genotype (./. in the output VCF file).')
+    
     group_bam_output = parser_bam.add_argument_group('OUTPUT')
     group_bam_output.add_argument('--sample',
                                         type=str,
@@ -180,15 +89,10 @@ Alternatively, it can detect SVs from existing reads alignments in SAM/BAM forma
                                               Give a comma-separated list of SV types. The possible SV types are: DEL (deletions), \
                                               INS (novel insertions), INV (inversions), DUP_TAN (tandem duplications), \
                                               DUP_INT (interspersed duplications), BND (breakends).')
-    group_bam_output.add_argument('--sequence_alleles',
+    group_bam_output.add_argument('--symbolic_alleles',
                                         action='store_true',
-                                        help='Use nucleotide sequences for alleles of deletions and inversions in output VCF (default: %(default)s). \
-                                              By default, all SVs are represented by symbolic alleles, such as <DEL> or <INV>.')
-    group_bam_output.add_argument('--insertion_sequences',
-                                        action='store_true',
-                                        help='Output insertion sequences in INFO tag of VCF (default: %(default)s). \
-                                              If enabled, the INFO/SEQS tag contains a list of insertion sequences from the supporting reads. \
-                                              However, the insertion sequences are not combined into a consensus sequence.')
+                                        help='Use symbolic alleles, such as <DEL> or <INV> in the VCF output (default: %(default)s). \
+                                              By default, deletions, insertions, and inversions are represented by their nucleotide sequence in the output VCF.')
     group_bam_output.add_argument('--duplications_as_insertions',
                                         action='store_true',
                                         help='Represent tandem and interspersed duplications as insertions in output VCF (default: %(default)s). \

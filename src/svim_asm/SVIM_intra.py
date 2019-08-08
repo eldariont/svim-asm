@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import sys
 
-from svim_asm.SVSignature import SignatureDeletion, SignatureInsertion
+from svim_asm.SVCandidate import CandidateDeletion, CandidateInsertion
 
 
 def analyze_cigar_indel(tuples, min_length):
@@ -31,16 +31,16 @@ def analyze_cigar_indel(tuples, min_length):
 
 
 def analyze_alignment_indel(alignment, bam, query_name, options):
-    sv_signatures = []
+    sv_candidates = []
     ref_chr = bam.getrname(alignment.reference_id)
     ref_start = alignment.reference_start
     indels = analyze_cigar_indel(alignment.cigartuples, options.min_sv_size)
     for pos_ref, pos_read, length, typ in indels:
         if typ == "DEL":
-            sv_signatures.append(SignatureDeletion(ref_chr, ref_start + pos_ref, ref_start + pos_ref + length, "cigar", query_name))
+            sv_candidates.append(CandidateDeletion(ref_chr, ref_start + pos_ref, ref_start + pos_ref + length, [query_name]))
         elif typ == "INS":
             insertion_seq = alignment.query_sequence[pos_read:pos_read+length]
-            sv_signatures.append(SignatureInsertion(ref_chr, ref_start + pos_ref, ref_start + pos_ref + length, "cigar", query_name, insertion_seq))
-    return sv_signatures
+            sv_candidates.append(CandidateInsertion(ref_chr, ref_start + pos_ref, ref_start + pos_ref + length, [query_name], insertion_seq))
+    return sv_candidates
 
 
