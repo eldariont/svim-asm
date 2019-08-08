@@ -1,20 +1,11 @@
-SVIM - Structural variant identification using long reads
-=========================================================
+SVIM-asm - Structural variant identification method (Assembly edition)
+======================================================================
 
-.. image:: https://badge.fury.io/py/svim.svg
-    :target: https://badge.fury.io/py/svim
+SVIM-asm (pronounced *SWIM-assem*) is a structural variant caller for genome-genome alignments.
+It analyzes a given sorted SAM/BAM file (preferably from minimap2) and detects five different variant classes between the query assembly and the reference: deletions, insertions, tandem and interspersed duplications and inversions.
 
-.. image:: https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg
-    :target: http://bioconda.github.io
-
-SVIM (pronounced *SWIM*) is a structural variant caller for long reads.
-It is able to detect, classify and genotype five different classes of structural variants.
-Unlike existing methods, SVIM integrates information from across the genome to precisely distinguish similar events, such as tandem and interspersed duplications and novel element insertions.
-In our experiments on simulated data and real datasets from PacBio and Nanopore sequencing machines, SVIM reached consistently better results than competing methods.
-Furthermore, it is unique in its capability of extracting both the genomic origin and destination of duplications.
-
-Background on Structural Variants and Long Reads
-------------------------------------------------
+Background
+----------
 
 .. image:: https://raw.githubusercontent.com/eldariont/svim/master/docs/SVclasses.png
     :align: center
@@ -24,57 +15,44 @@ Studies have shown that they affect more bases in any given genome than SNPs and
 Consequently, they have a large impact on genes and regulatory regions.
 This is reflected in the large number of genetic diseases that are caused by SVs.
 
-Common sequencing technologies by providers such as Illumina generate short reads with high accuracy.
-However, they exhibit weaknesses in repeat and low-complexity regions.
-This negatively affects SV detection because SVs are associated to such regions.
-Single molecule long-read sequencing technologies from Pacific Biotechnologies and Oxford Nanopore produce reads with error rates of up to 15% but with lengths of several kb.
-The high read lengths enable them to cover entire repeats and SVs which facilitates SV detection.
+Nowadays, SVs are usually detected using data from second-generation sequencing (Illumina) or third-generation sequencing (PacBio and Oxford Nanopore).
+Typically, the reads from a sequencing experiment are first aligned to a reference genome before the alignments are analyzed for characteristic signatures of SVs.
+Recently, substantial advances in sequencing technology and software development have made the de novo assembly of large mammalian genomes more efficient than ever.
+Accurate assemblies of the human genome can now be generated in a few days and at a fraction of its former cost. `[1] <https://www.biorxiv.org/content/10.1101/715722v1>`_
+Similarly to raw sequencing reads, the genome assemblies can be aligned to another genome to uncover genomic rearrangements and structural variants.
+Our tool, SVIM-asm, detects structural variants between different assemblies or reference genomes from given genome-genome alignments.
+It is fast (<5 min for a human genome-genome alignment), easy to use and detects all major variant types.
 
 Installation
 ------------
 
 .. code-block:: bash
 
-    #Install via conda: easiest option, installs all dependencies including read alignment dependencies
-    conda install --channel bioconda svim
-
-    #Install via pip (requires Python 3.6.*): installs all dependencies except those necessary for read alignment (ngmlr, minimap2, samtools)
-    pip3 install svim
-
-    #Install from github (requires Python 3.6.*): installs all dependencies except those necessary for read alignment (ngmlr, minimap2, samtools)
+    #Install from github (requires Python 3)
     git clone https://github.com/eldariont/svim-asm.git
-    cd svim
+    cd svim-asm
     pip3 install .
 
-Changelog
----------
-- **v1.2.0**: add 3 more VCF output options: output sequence instead of symbolic alleles in VCF, output names of supporting reads, output insertion sequences of supporting reads
-- **v1.1.0**: outputs BNDs in VCF, detects large tandem duplications, allows skipping genotyping, makes VCF output more flexible, adds genotype scatter plot
-- **v1.0.0**: adds genotyping of deletions, inversions, insertions and interspersed duplications, produces plots of SV length distribution, improves help descriptions
-- **v0.5.0**: replaces graph-based clustering with hierarchical clustering, modifies scoring function, improves partitioning prior to clustering, improves calling from coordinate-sorted SAM/BAM files, improves VCF output
-- **v0.4.4**: includes exception message into log files, bug fixes, adds tests and sets up Travis
-- **v0.4.3**: adds support for coordinate-sorted SAM/BAM files, improves VCF output and increases compatibility with IGV and truvari, bug fixes
-    
-Input
+Execution
 -----
 
-SVIM analyzes long reads given as a FASTA/FASTQ file (uncompressed or gzipped) or a file list.
-Alternatively, it can analyze an alignment file in BAM format.
-SVIM was tested on both PacBio and Nanopore data.
-It works best for alignment files produced by `NGMLR <https://github.com/philres/ngmlr>`_ but also supports the faster read mapper `minimap2 <https://github.com/lh3/minimap2>`_.
+SVIM-asm analyzes alignments between a query assembly and a reference assembly in SAM/BAM format. 
+We recommend to produce the alignments using `minimap2 <https://github.com/lh3/minimap2>`_:
+
+.. code-block:: bash
+
+    minimap2 --paf-no-hit -a -x asm5 --cs -r2k -t <num_threads> <reference.fa> <assembly.fasta> > <alignments.sam>
+    samtools sort -m4G -@4 -o <alignments.sorted.bam> <alignments.sam>
+    svim-asm alignment <working_dir> <alignments.sorted.bam> <reference.fa>
 
 Output
 ------
 
-SVIM distinguishes five different SV classes (see above schema): deletions, inversions, tandem and interspersed duplications and novel insertions.
-Additionally, SVIM indicates for detected interspersed duplications whether the genomic origin location seems to be deleted in at least one haplotype (indicating a cut&paste insertion) or not (indicating a canonic interspersed duplication).
-For each of these SV classes, SVIM produces a BED file with the SV coordinates.
-Additionally, a VCF file is produced containing all found SVs.
-
-Usage
-----------------------
-
-Please see our `wiki <https://github.com/eldariont/svim/wiki>`_.
+SVIM-asm creates all output files in the given working directory.
+The following files are produced:
+- variants.vcf contains the detected SVs in VCF format (see http://samtools.github.io/hts-specs/VCFv4.2.pdf)
+- sv-lengths.png contains a histogram of SV sizes
+- SVIM_<day>_<time>.log contains the same logging output as the command line 
 
 Contact
 -------
@@ -84,7 +62,7 @@ If you experience problems or have suggestions please create an issue or a pull 
 Citation
 ---------
 
-Feel free to read and cite our paper in Bioinformatics: https://doi.org/10.1093/bioinformatics/btz041
+SVIM-asm is a fork of our long-read caller SVIM. Feel free to read and cite our paper in Bioinformatics: https://doi.org/10.1093/bioinformatics/btz041
 
 License
 -------
