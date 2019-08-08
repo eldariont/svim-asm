@@ -60,7 +60,8 @@ def write_final_vcf(int_duplication_candidates,
     print("##INFO=<ID=SVLEN,Number=1,Type=Integer,Description=\"Difference in length between REF and ALT alleles\">", file=vcf_output)    
     if options.read_names:
         print("##INFO=<ID=READS,Number=.,Type=String,Description=\"Names of all supporting reads\">", file=vcf_output)
-    print("##FILTER=<ID=not_fully_covered,Description=\"Tandem duplication is not fully covered by a single read\">", file=vcf_output)
+    print("##FILTER=<ID=not_fully_covered,Description=\"Tandem duplication is not fully covered by a contig\">", file=vcf_output)
+    print("##FILTER=<ID=incomplete_inversion,Description=\"Only one inversion breakpoint is supported\">", file=vcf_output)
     print("##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">", file=vcf_output)
     print("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t" + options.sample, file=vcf_output)
 

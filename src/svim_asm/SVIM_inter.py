@@ -2,6 +2,9 @@ from __future__ import print_function
 
 import sys
 from statistics import mean
+import numpy as np
+from scipy.cluster.hierarchy import linkage, fcluster
+
 
 from svim_asm.SVCandidate import CandidateDeletion, CandidateInsertion, CandidateInversion, CandidateBreakend, CandidateDuplicationTandem, CandidateDuplicationInterspersed
 
@@ -12,6 +15,49 @@ def is_similar(chr1, start1, end1, chr2, start2, end2):
     else:
         return False
 
+
+def reciprocal_overlap_distance(inversion1, inversion2):
+    start1, end1, direction1 = inversion1
+    start2, end2, direction2 = inversion2
+    #Inversion breakpoints with same direction cannot be joined 
+    if direction1 == direction2:
+        return 1
+    if start2 >= end1:
+        return 1
+    elif start1 >= end2:
+        return 1
+    elif start2 >= start1:
+        overlap = min(end1, end2) - start2
+    else:
+        overlap = min(end1, end2) - max(start1, start2)
+    
+    relative_overlap1 = overlap / float(end1 - start1)
+    realtive_overlap2 = overlap / float(end2 - start2)
+    minimum_relative_overlap = min(relative_overlap1, realtive_overlap2)
+    return 1 - minimum_relative_overlap
+
+
+def process_overlapping_inversions(active_inversions, query_name):
+    if len(active_inversions) < 2:
+        clusters = [active_inversions]
+    else:
+        clusters = []
+        data = np.array( [[inversion[1], inversion[2], 0 if inversion[3].split("_")[0] == "left" else 1] for inversion in active_inversions])
+        Z = linkage(data, method = "average", metric = reciprocal_overlap_distance)
+        cluster_indices = list(fcluster(Z, 0.7, criterion='distance'))
+        new_clusters = [[] for i in range(max(cluster_indices))]
+        for inversion_index, cluster_index in enumerate(cluster_indices):
+            new_clusters[cluster_index-1].append(active_inversions[inversion_index])
+        clusters.extend(new_clusters)
+
+    inversion_candidates = []
+    for cluster in clusters:
+        chrom = cluster[0][0]
+        start = max([i[1] for i in cluster])
+        end = min([i[2] for i in cluster])
+        complete = True if len(cluster) > 1 else False
+        inversion_candidates.append(CandidateInversion(chrom, start, end, [query_name], complete))
+    return inversion_candidates
 
 def analyze_read_segments(primary, supplementaries, bam, options):
     read_name = primary.query_name
@@ -40,6 +86,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
     sv_candidates = []
     tandem_duplications = []
     translocations = []
+    inversions = []
 
     for index in range(len(sorted_alignment_list) - 1):
         alignment_current = sorted_alignment_list[index]
@@ -124,7 +171,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                         if alignment_next['ref_start'] - alignment_current['ref_end'] >= -options.segment_overlap_tolerance: # Case 1
                             #INV candidate
                             if alignment_next['ref_end'] - alignment_current['ref_end'] <= options.max_sv_size:
-                                sv_candidates.append(CandidateInversion(ref_chr, alignment_current['ref_end'], alignment_next['ref_end'], [read_name], "left_fwd"))
+                                inversions.append((ref_chr, alignment_current['ref_end'], alignment_next['ref_end'], "left_fwd"))
                                 #transitions.append(('inversion', 'left_fwd', ref_chr, alignment_current['ref_end'], alignment_next['ref_end']))
                             #Either very large INV or TRANS
                             else:
@@ -133,7 +180,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                         elif alignment_current['ref_start'] - alignment_next['ref_end'] >= -options.segment_overlap_tolerance: # Case 3
                             #INV candidate
                             if alignment_current['ref_end'] - alignment_next['ref_end'] <= options.max_sv_size:
-                                sv_candidates.append(CandidateInversion(ref_chr, alignment_next['ref_end'], alignment_current['ref_end'], [read_name], "left_rev"))
+                                inversions.append((ref_chr, alignment_next['ref_end'], alignment_current['ref_end'], "left_rev"))
                                 #transitions.append(('inversion', 'left_rev', ref_chr, alignment_next['ref_end'], alignment_current['ref_end']))
                             #Either very large INV or TRANS
                             else:
@@ -148,7 +195,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                         if alignment_next['ref_start'] - alignment_current['ref_end'] >= -options.segment_overlap_tolerance: # Case 2
                             #INV candidate
                             if alignment_next['ref_start'] - alignment_current['ref_start'] <= options.max_sv_size:
-                                sv_candidates.append(CandidateInversion(ref_chr, alignment_current['ref_start'], alignment_next['ref_start'], [read_name], "right_fwd"))
+                                inversions.append((ref_chr, alignment_current['ref_start'], alignment_next['ref_start'], "right_fwd"))
                                 #transitions.append(('inversion', 'right_fwd', ref_chr, alignment_current['ref_start'], alignment_next['ref_start']))
                             #Either very large INV or TRANS
                             else:
@@ -157,7 +204,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                         elif alignment_current['ref_start'] - alignment_next['ref_end'] >= -options.segment_overlap_tolerance: # Case 4
                             #INV candidate
                             if alignment_current['ref_start'] - alignment_next['ref_start'] <= options.max_sv_size:
-                                sv_candidates.append(CandidateInversion(ref_chr, alignment_next['ref_start'], alignment_current['ref_start'], [read_name], "right_rev"))
+                                inversions.append((ref_chr, alignment_next['ref_start'], alignment_current['ref_start'], "right_rev"))
                                 #transitions.append(('inversion', 'right_rev', ref_chr, alignment_next['ref_start'], alignment_current['ref_start']))
                             #Either very large INV or TRANS
                             else:
@@ -222,7 +269,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
         fully_covered = True if sum(current_fully_covered) else False
         sv_candidates.append(CandidateDuplicationTandem(current_chromosome, int(mean(current_starts)), int(mean(current_ends)), current_copy_number, fully_covered, [read_name]))
 
-    #Handle insertions_from
+    #Handle interspersed duplications
     for this_index in range(len(translocations)):
         this_dir1 = translocations[this_index][0]
         this_dir2 = translocations[this_index][1]
@@ -251,5 +298,23 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                         #INV_INS_DUP candidate
                         else:
                             pass
+
+    #Handle inversions
+    sorted_inversions = sorted(inversions, key=lambda inversion: (inversion[0], inversion[1], inversion[2]))
+    active_inversions = []
+    for inversion in sorted_inversions:
+        chrom, start, end, direction = inversion
+        if len(active_inversions) == 0:
+            active_inversions.append(inversion)
+        else:
+            #If current inversion overlaps one of the active inversions
+            if chrom == active_inversions[-1][0] and start < max([i[2] for i in active_inversions]):
+                active_inversions.append(inversion)
+            else:
+                #Cluster inversions
+                sv_candidates.extend(process_overlapping_inversions(active_inversions, read_name))
+                active_inversions = []
+    if len(active_inversions) > 0:
+        sv_candidates.extend(process_overlapping_inversions(active_inversions, read_name))  
 
     return sv_candidates

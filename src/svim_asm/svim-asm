@@ -79,7 +79,7 @@ def main():
     logging.info("Found {0} inversion candidates.".format(len(inversion_candidates)))
     logging.info("Found {0} tandem duplication candidates.".format(len(tandem_duplication_candidates)))
     logging.info("Found {0} breakend candidates.".format(len(breakend_candidates)))
-    logging.info("Found {0} interspersed duplicationcandidates.".format(len(interspersed_duplication_candidates)))
+    logging.info("Found {0} interspersed duplication candidates.".format(len(interspersed_duplication_candidates)))
     
     logging.info("****************** STEP 2: OUTPUT ******************")
     # Write SV candidates

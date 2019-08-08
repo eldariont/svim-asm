@@ -77,7 +77,7 @@ class CandidateDeletion(Candidate):
 
 
 class CandidateInversion(Candidate):
-    def __init__(self, source_contig, source_start, source_end, reads, direction, genotype = "1/1"):
+    def __init__(self, source_contig, source_start, source_end, reads, complete, genotype = "1/1"):
         self.source_contig = source_contig
         #0-based start of the inversion (first inverted base)
         self.source_start = source_start
@@ -86,7 +86,7 @@ class CandidateInversion(Candidate):
 
         self.type = "INV"
         self.reads = reads
-        self.direction = direction
+        self.complete = complete
         self.genotype = genotype
 
         self.complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
@@ -95,6 +95,8 @@ class CandidateInversion(Candidate):
     def get_vcf_entry(self, sequence_alleles = False, reference = None, read_names = False):
         contig, start, end = self.get_source()
         filters = []
+        if not self.complete:
+            filters.append("incomplete_inversion")
         if sequence_alleles:
             ref_allele = reference.fetch(contig, start, end).upper()
             alt_allele = "".join(self.complement.get(base.upper(), base.upper()) for base in reversed(ref_allele))
