@@ -55,30 +55,8 @@ def main():
         logging.info("PARAMETER: {0}, VALUE: {1}".format(arg, getattr(options, arg)))
 
     logging.info("****************** STEP 1: COLLECT ******************")
-    if options.sub == 'reads':
-        logging.info("MODE: reads")
-        logging.info("INPUT: {0}".format(os.path.abspath(options.reads)))
-        logging.info("GENOME: {0}".format(os.path.abspath(options.genome)))
-        reads_type = guess_file_type(options.reads)
-        if reads_type == "unknown":
-            return
-        elif reads_type == "list":
-            # List of read files
-            sv_signatures = []
-            for index, file_path in enumerate(read_file_list(options.reads)):
-                logging.info("Starting processing of file {0} from the list..".format(index))
-                reads_type = guess_file_type(file_path)
-                if reads_type == "unknown" or reads_type == "list":
-                    return
-                bam_path = run_alignment(options.working_dir, options.genome, file_path, reads_type, options.cores, options.aligner, options.nanopore)
-                aln_file = pysam.AlignmentFile(bam_path)
-                sv_signatures.extend(analyze_alignment_file_coordsorted(aln_file, options))
-        else:
-            # Single read file
-            bam_path = run_alignment(options.working_dir, options.genome, options.reads, reads_type, options.cores, options.aligner, options.nanopore)
-            aln_file = pysam.AlignmentFile(bam_path)
-            sv_signatures = analyze_alignment_file_coordsorted(aln_file, options)
-    elif options.sub == 'alignment':
+    
+    if options.sub == 'alignment':
         logging.info("MODE: alignment")
         logging.info("INPUT: {0}".format(os.path.abspath(options.bam_file)))
         aln_file = pysam.AlignmentFile(options.bam_file)
