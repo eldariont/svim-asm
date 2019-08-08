@@ -141,7 +141,7 @@ class CandidateInsertion(Candidate):
         contig, start, end = self.get_destination()
         filters = []
         if sequence_alleles:
-            ref_allele = reference.fetch(contig, start, start + 1).upper()
+            ref_allele = reference.fetch(contig, start-1, start).upper()
             alt_allele = ref_allele + self.sequence
         else:
             ref_allele = "N"
