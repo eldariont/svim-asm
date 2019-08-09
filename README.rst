@@ -38,13 +38,24 @@ Execution
 -----
 
 SVIM-asm analyzes alignments between a query assembly and a reference assembly in SAM/BAM format. 
-We recommend to produce the alignments using `minimap2 <https://github.com/lh3/minimap2>`_:
+We recommend to produce the alignments using `minimap2 <https://github.com/lh3/minimap2>`_.
+See this example for a haploid query assembly:
 
 .. code-block:: bash
 
     minimap2 --paf-no-hit -a -x asm5 --cs -r2k -t <num_threads> <reference.fa> <assembly.fasta> > <alignments.sam>
     samtools sort -m4G -@4 -o <alignments.sorted.bam> <alignments.sam>
-    svim-asm alignment <working_dir> <alignments.sorted.bam> <reference.fa>
+    svim-asm haploid <working_dir> <alignments.sorted.bam> <reference.fa>
+
+To analyze a diploid assembly consisting of two haplotypes, you need to align both to the reference assembly: 
+
+.. code-block:: bash
+
+    minimap2 --paf-no-hit -a -x asm5 --cs -r2k -t <num_threads> <reference.fa> <haplotype1.fasta> > <alignments_hap1.sam>
+    minimap2 --paf-no-hit -a -x asm5 --cs -r2k -t <num_threads> <reference.fa> <haplotype2.fasta> > <alignments_hap2.sam>
+    samtools sort -m4G -@4 -o <alignments_hap1.sorted.bam> <alignments_hap1.sam>
+    samtools sort -m4G -@4 -o <alignments_hap2.sorted.bam> <alignments_hap2.sam>
+    svim-asm diploid <working_dir> <alignments_hap1.sorted.bam> <alignments_hap2.sorted.bam> <reference.fa>
 
 Output
 ------
