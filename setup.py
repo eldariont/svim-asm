@@ -36,5 +36,5 @@ setup(name='svim-asm',
       package_dir = {"": "src"},
       data_files = [("", ["LICENSE"])],
       zip_safe=False,
-      install_requires=['pysam', 'numpy', 'scipy', 'matplotlib'],
+      install_requires=['pysam', 'numpy', 'scipy', 'matplotlib', 'edlib'],
       scripts=['src/svim_asm/svim-asm'])
