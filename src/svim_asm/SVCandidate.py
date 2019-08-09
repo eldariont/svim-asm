@@ -137,6 +137,11 @@ class CandidateInsertion(Candidate):
     def get_destination(self):
         return (self.dest_contig, self.dest_start, self.dest_end)
 
+
+    def get_key(self):
+        return (self.type, self.dest_contig, self.dest_start)
+
+
     def get_vcf_entry(self, sequence_alleles = False, reference = None, read_names = False):
         contig, start, end = self.get_destination()
         filters = []
@@ -269,6 +274,10 @@ class CandidateDuplicationInterspersed(Candidate):
 
     def get_destination(self):
         return (self.dest_contig, self.dest_start, self.dest_end)
+
+
+    def get_key(self):
+        return (self.type, self.dest_contig, self.dest_start)
 
 
     def get_vcf_entry_as_ins(self, sequence_alleles = False, reference = None, read_names = False):
