@@ -41,14 +41,12 @@ def process_overlapping_inversions(active_inversions, query_name):
     if len(active_inversions) < 2:
         clusters = [active_inversions]
     else:
-        clusters = []
         data = np.array( [[inversion[1], inversion[2], 0 if inversion[3].split("_")[0] == "left" else 1] for inversion in active_inversions])
-        Z = linkage(data, method = "average", metric = reciprocal_overlap_distance)
-        cluster_indices = list(fcluster(Z, 0.7, criterion='distance'))
-        new_clusters = [[] for i in range(max(cluster_indices))]
+        Z = linkage(data, method = "complete", metric = reciprocal_overlap_distance)
+        cluster_indices = list(fcluster(Z, 0.3, criterion='distance'))
+        clusters = [[] for i in range(max(cluster_indices))]
         for inversion_index, cluster_index in enumerate(cluster_indices):
-            new_clusters[cluster_index-1].append(active_inversions[inversion_index])
-        clusters.extend(new_clusters)
+            clusters[cluster_index-1].append(active_inversions[inversion_index])
 
     inversion_candidates = []
     for cluster in clusters:
