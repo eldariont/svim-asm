@@ -18,7 +18,8 @@ This is reflected in the large number of genetic diseases that are caused by SVs
 Nowadays, SVs are usually detected using data from second-generation sequencing (Illumina) or third-generation sequencing (PacBio and Oxford Nanopore).
 Typically, the reads from a sequencing experiment are first aligned to a reference genome before the alignments are analyzed for characteristic signatures of SVs.
 Recently, substantial advances in sequencing technology and software development have made the de novo assembly of large mammalian genomes more efficient than ever.
-Accurate assemblies of the human genome can now be generated in a few days and at a fraction of its former cost. `[1] <https://www.biorxiv.org/content/10.1101/715722v1>`_
+Accurate assemblies of the human genome can now be generated in a few days and at a fraction of its former cost. `[Shafin et al.] <https://www.biorxiv.org/content/10.1101/715722v1>`_
+
 Similarly to raw sequencing reads, the genome assemblies can be aligned to another genome to uncover genomic rearrangements and structural variants.
 Our tool, SVIM-asm, detects structural variants between different assemblies or reference genomes from given genome-genome alignments.
 It is fast (<5 min for a human genome-genome alignment), easy to use and detects all major variant types.
@@ -50,9 +51,10 @@ Output
 
 SVIM-asm creates all output files in the given working directory.
 The following files are produced:
-- variants.vcf contains the detected SVs in VCF format (see http://samtools.github.io/hts-specs/VCFv4.2.pdf)
-- sv-lengths.png contains a histogram of SV sizes
-- SVIM_<day>_<time>.log contains the same logging output as the command line 
+
+- ``variants.vcf`` contains the detected SVs in VCF format (see http://samtools.github.io/hts-specs/VCFv4.2.pdf)
+- ``sv-lengths.png`` contains a histogram of SV sizes
+- ``SVIM_<day>_<time>.log`` contains the same logging output as the command line 
 
 Contact
 -------
