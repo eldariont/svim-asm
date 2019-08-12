@@ -124,7 +124,7 @@ def compute_distance(candidate_with_haplotype1, candidate_with_haplotype2, refer
     return editDistance
 
 
-def pair_haplotypes(partitions, reference):
+def pair_haplotypes(partitions, reference, edit_distance_threshold = 10):
     clusters_final = []
     for partition in partitions:
         if len(partition) < 2:
@@ -138,7 +138,7 @@ def pair_haplotypes(partitions, reference):
                 for j in range(i+1, len(partition)):
                     distances.append(compute_distance(partition[i], partition[j], reference))
             Z = linkage(np.array(distances), method = "complete")
-            cluster_indices = list(fcluster(Z, 10, criterion='distance'))
+            cluster_indices = list(fcluster(Z, edit_distance_threshold, criterion='distance'))
             new_clusters = [[] for i in range(max(cluster_indices))]
             for candidate_index, cluster_index in enumerate(cluster_indices):
                 new_clusters[cluster_index-1].append(partition[candidate_index])
@@ -146,7 +146,7 @@ def pair_haplotypes(partitions, reference):
     return clusters_final
 
 
-def pair_candidates(sv_candidates1, sv_candidates2, reference):
+def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_threshold):
     deletion_candidates1 = [(1, cand) for cand in sv_candidates1 if cand.type == "DEL"]
     insertion_candidates1 = [(1, cand) for cand in sv_candidates1 if cand.type == "INS"]
     inversion_candidates1 = [(1, cand) for cand in sv_candidates1 if cand.type == "INV"]
@@ -165,7 +165,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference):
     #DELETIONS
     logging.info("Pairing {0} deletions...".format(len(deletion_candidates1) + len(deletion_candidates2)))
     partitions = form_partitions(deletion_candidates1 + deletion_candidates2, 10000)
-    clusters = pair_haplotypes(partitions, reference)
+    clusters = pair_haplotypes(partitions, reference, edit_distance_threshold)
     for cluster in clusters:
         if len(cluster) == 1:
             candidate = cluster[0][1]
@@ -190,7 +190,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference):
     #INVERSIONS
     logging.info("Pairing {0} inversions...".format(len(inversion_candidates1) + len(inversion_candidates2)))
     partitions = form_partitions(inversion_candidates1 + inversion_candidates2, 10000)
-    clusters = pair_haplotypes(partitions, reference)
+    clusters = pair_haplotypes(partitions, reference, edit_distance_threshold)
     for cluster in clusters:
         if len(cluster) == 1:
             candidate = cluster[0][1]
@@ -218,7 +218,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference):
     #INSERTIONS
     logging.info("Pairing {0} insertions...".format(len(insertion_candidates1) + len(insertion_candidates2)))
     partitions = form_partitions(insertion_candidates1 + insertion_candidates2, 10000)
-    clusters = pair_haplotypes(partitions, reference)
+    clusters = pair_haplotypes(partitions, reference, edit_distance_threshold)
     for cluster in clusters:
         if len(cluster) == 1:
             candidate = cluster[0][1]
@@ -245,7 +245,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference):
     #TANDEM DUPLICATIONS
     logging.info("Pairing {0} tandem duplications...".format(len(tandem_duplication_candidates1) + len(tandem_duplication_candidates2)))
     partitions = form_partitions(tandem_duplication_candidates1 + tandem_duplication_candidates2, 10000)
-    clusters = pair_haplotypes(partitions, reference)
+    clusters = pair_haplotypes(partitions, reference, edit_distance_threshold)
     for cluster in clusters:
         if len(cluster) == 1:
             candidate = cluster[0][1]
@@ -275,7 +275,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference):
     #INTERSPERSED DUPLICATIONS
     logging.info("Pairing {0} interspersed duplications...".format(len(interspersed_duplication_candidates1) + len(interspersed_duplication_candidates2)))
     partitions = form_partitions(interspersed_duplication_candidates1 + interspersed_duplication_candidates2, 10000)
-    clusters = pair_haplotypes(partitions, reference)
+    clusters = pair_haplotypes(partitions, reference, edit_distance_threshold)
     for cluster in clusters:
         if len(cluster) == 1:
             candidate = cluster[0][1]
@@ -309,7 +309,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference):
 
     # #BREAKENDS
     # partitions = form_partitions(breakend_candidates1 + breakend_candidates2, 10000)
-    # clusters = pair_haplotypes(partitions, reference)
+    # clusters = pair_haplotypes(partitions, reference, edit_distance_threshold)
     # for cluster in clusters:
     #     if len(cluster) == 1:
     #         candidate = cluster[0][1]

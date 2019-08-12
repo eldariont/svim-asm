@@ -111,7 +111,7 @@ def main():
         interspersed_duplication_candidates = [cand for cand in sv_candidates if cand.type == "DUP_INT"]
     elif options.sub == 'diploid':
         logging.info("****************** STEP 2: PAIR ******************")
-        paired_candidates = pair_candidates(sv_candidates1, sv_candidates2, reference)
+        paired_candidates = pair_candidates(sv_candidates1, sv_candidates2, reference, options.max_edit_distance)
 
         deletion_candidates = [cand for cand in paired_candidates if cand.type == "DEL"]
         insertion_candidates = [cand for cand in paired_candidates if cand.type == "INS"]
