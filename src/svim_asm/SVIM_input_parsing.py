@@ -166,7 +166,7 @@ SVIM-asm has an haploid and a diploid mode depending on the input assembly and p
     group_diploid_pair = parser_diploid.add_argument_group('PAIR')
     group_diploid_pair.add_argument('--max_edit_distance',
                                         type=int,
-                                        default=10,
+                                        default=200,
                                         help='Maximum edit distance between both alleles to be paired up into a homozygous call (default: %(default)s).')
 
     group_diploid_output = parser_diploid.add_argument_group('OUTPUT')
