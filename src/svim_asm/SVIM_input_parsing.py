@@ -8,9 +8,12 @@ def parse_arguments(program_version, arguments = sys.argv[1:]):
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description="""SVIM-asm (pronounced SWIM-assem) is a structural variant caller for genome-genome alignments. 
 It discriminates five different variant classes: deletions, insertions, tandem and interspersed duplications and inversions.
+SVIM-asm analyzes alignments between a haploid or diploid query assembly and a reference assembly in SAM/BAM format. 
+We recommend to produce the alignments using minimap2.
 
-SVIM consists of two major steps:
-- COLLECT detects SVs in genome-genome alignments in BAM format
+SVIM-asm has an haploid and a diploid mode depending on the input assembly and performs the following steps:
+- COLLECT detects SVs from genome-genome alignments in BAM format
+- PAIR merges the SV calls from the two haplotypes of a diploid assembly (diploid mode only)
 - OUTPUT prints the found SVs in VCF format
 """)
 
@@ -37,17 +40,15 @@ SVIM consists of two major steps:
     group_haploid_collect.add_argument('--min_mapq',
                                       type=int,
                                       default=20,
-                                      help='Minimum mapping quality of reads to consider (default: %(default)s). \
-                                            Reads with a lower mapping quality are ignored.')
+                                      help='Minimum mapping quality of alignments to consider (default: %(default)s). \
+                                            Alignments with a lower mapping quality are ignored.')
     group_haploid_collect.add_argument('--min_sv_size',
                                       type=int,
                                       default=40,
                                       help='Minimum SV size to detect (default: %(default)s). \
                                             SVIM can potentially detect events of any size but is limited by the \
                                             signal-to-noise ratio in the input alignments. That means that more \
-                                            accurate reads and alignments enable the detection of smaller events. \
-                                            For current PacBio or Nanopore data, we would recommend a minimum size \
-                                            of 40bp or larger.')
+                                            accurate assemblies and alignments enable the detection of smaller events.')
     group_haploid_collect.add_argument('--max_sv_size',
                                       type=int,
                                       default=100000,
@@ -60,22 +61,22 @@ SVIM consists of two major steps:
                                               than this parameter and a deletion (or inversion) if it is smaller or equal.')
     group_haploid_collect.add_argument('--segment_gap_tolerance',
                                       type=int,
-                                      default=10,
+                                      default=50,
                                       help='Maximum tolerated gap between adjacent alignment segments (default: %(default)s). \
-                                            This parameter applies to gaps on the reference and the read. Example: \
-                                            Deletions are detected from two subsequent segments of a split read that are mapped \
+                                            This parameter applies to gaps on the reference and the query. Example: \
+                                            Deletions are detected from two subsequent segments of a split query sequence that are mapped \
                                             far apart from each other on the reference. The segment gap tolerance determines \
-                                            the maximum tolerated length of the read gap between both segments. If there is an \
-                                            unaligned read segment larger than this value between the two segments, no deletion is called.')
+                                            the maximum tolerated length of the query gap between both segments. If there is an \
+                                            unaligned query segment larger than this value between the two segments, no deletion is called.')
     group_haploid_collect.add_argument('--segment_overlap_tolerance',
                                       type=int,
-                                      default=5,
+                                      default=50,
                                       help='Maximum tolerated overlap between adjacent alignment segments (default: %(default)s). \
-                                            This parameter applies to overlaps on the reference and the read. Example: \
-                                            Deletions are detected from two subsequent segments of a split read that are mapped \
+                                            This parameter applies to overlaps on the reference and the query. Example: \
+                                            Deletions are detected from two subsequent segments of a split query sequence that are mapped \
                                             far apart from each other on the reference. The segment overlap tolerance determines \
-                                            the maximum tolerated length of an overlap between both segments on the read. If the \
-                                            overlap between the two segments on the read is larger than this value, no deletion is called.')
+                                            the maximum tolerated length of an overlap between both segments in the query. If the \
+                                            overlap between the two segments in the query is larger than this value, no deletion is called.')
     
     group_haploid_output = parser_haploid.add_argument_group('OUTPUT')
     group_haploid_output.add_argument('--sample',
@@ -99,10 +100,10 @@ SVIM consists of two major steps:
                                               By default, duplications are represented by the SVTYPE=DUP and the genomic source is given by the \
                                               POS and END tags. When enabling this option, duplications are instead represented by the SVTYPE=INS \
                                               and POS and END both give the insertion point of the duplication.')
-    group_haploid_output.add_argument('--read_names',
+    group_haploid_output.add_argument('--query_names',
                                         action='store_true',
-                                        help='Output names of supporting reads in INFO tag of VCF (default: %(default)s). \
-                                              If enabled, the INFO/READS tag contains the list of names of the supporting reads.')
+                                        help='Output names of supporting query sequences in INFO tag of VCF (default: %(default)s). \
+                                              If enabled, the INFO/READS tag contains the list of names of the supporting query sequences.')
 
     parser_diploid = subparsers.add_parser('diploid',
                                         help='Detect SVs from the alignment of a diploid query assembly to a reference assembly')
@@ -124,17 +125,15 @@ SVIM consists of two major steps:
     group_diploid_collect.add_argument('--min_mapq',
                                       type=int,
                                       default=20,
-                                      help='Minimum mapping quality of reads to consider (default: %(default)s). \
-                                            Reads with a lower mapping quality are ignored.')
+                                      help='Minimum mapping quality of alignments to consider (default: %(default)s). \
+                                            Alignments with a lower mapping quality are ignored.')
     group_diploid_collect.add_argument('--min_sv_size',
                                       type=int,
                                       default=40,
                                       help='Minimum SV size to detect (default: %(default)s). \
                                             SVIM can potentially detect events of any size but is limited by the \
                                             signal-to-noise ratio in the input alignments. That means that more \
-                                            accurate reads and alignments enable the detection of smaller events. \
-                                            For current PacBio or Nanopore data, we would recommend a minimum size \
-                                            of 40bp or larger.')
+                                            accurate assemblies and alignments enable the detection of smaller events.')
     group_diploid_collect.add_argument('--max_sv_size',
                                       type=int,
                                       default=100000,
@@ -147,23 +146,29 @@ SVIM consists of two major steps:
                                               than this parameter and a deletion (or inversion) if it is smaller or equal.')
     group_diploid_collect.add_argument('--segment_gap_tolerance',
                                       type=int,
-                                      default=10,
+                                      default=50,
                                       help='Maximum tolerated gap between adjacent alignment segments (default: %(default)s). \
-                                            This parameter applies to gaps on the reference and the read. Example: \
-                                            Deletions are detected from two subsequent segments of a split read that are mapped \
+                                            This parameter applies to gaps on the reference and the query. Example: \
+                                            Deletions are detected from two subsequent segments of a split query sequence that are mapped \
                                             far apart from each other on the reference. The segment gap tolerance determines \
-                                            the maximum tolerated length of the read gap between both segments. If there is an \
-                                            unaligned read segment larger than this value between the two segments, no deletion is called.')
+                                            the maximum tolerated length of the query gap between both segments. If there is an \
+                                            unaligned query segment larger than this value between the two segments, no deletion is called.')
     group_diploid_collect.add_argument('--segment_overlap_tolerance',
                                       type=int,
-                                      default=5,
+                                      default=50,
                                       help='Maximum tolerated overlap between adjacent alignment segments (default: %(default)s). \
-                                            This parameter applies to overlaps on the reference and the read. Example: \
-                                            Deletions are detected from two subsequent segments of a split read that are mapped \
+                                            This parameter applies to overlaps on the reference and the query. Example: \
+                                            Deletions are detected from two subsequent segments of a split query sequence that are mapped \
                                             far apart from each other on the reference. The segment overlap tolerance determines \
-                                            the maximum tolerated length of an overlap between both segments on the read. If the \
-                                            overlap between the two segments on the read is larger than this value, no deletion is called.')
-    
+                                            the maximum tolerated length of an overlap between both segments in the query. If the \
+                                            overlap between the two segments in the query is larger than this value, no deletion is called.')
+
+    group_diploid_pair = parser_diploid.add_argument_group('PAIR')
+    group_diploid_pair.add_argument('--max_edit_distance',
+                                        type=int,
+                                        default=10,
+                                        help='Maximum edit distance between both alleles to be paired up into a homozygous call (default: %(default)s).')
+
     group_diploid_output = parser_diploid.add_argument_group('OUTPUT')
     group_diploid_output.add_argument('--sample',
                                         type=str,
@@ -186,8 +191,8 @@ SVIM consists of two major steps:
                                               By default, duplications are represented by the SVTYPE=DUP and the genomic source is given by the \
                                               POS and END tags. When enabling this option, duplications are instead represented by the SVTYPE=INS \
                                               and POS and END both give the insertion point of the duplication.')
-    group_diploid_output.add_argument('--read_names',
+    group_diploid_output.add_argument('--query_names',
                                         action='store_true',
-                                        help='Output names of supporting reads in INFO tag of VCF (default: %(default)s). \
-                                              If enabled, the INFO/READS tag contains the list of names of the supporting reads.')
+                                        help='Output names of supporting query sequences in INFO tag of VCF (default: %(default)s). \
+                                              If enabled, the INFO/READS tag contains the list of names of the supporting query sequences.')
     return parser.parse_args(arguments)
