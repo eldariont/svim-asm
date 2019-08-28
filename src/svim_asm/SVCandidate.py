@@ -178,6 +178,7 @@ class CandidateDuplicationTandem(Candidate):
         #0-based end of the region (one past the last copied base)
         self.source_end = source_end
         
+        #number of additional copies
         self.copies = copies
 
         self.type = "DUP_TAN"
@@ -193,8 +194,8 @@ class CandidateDuplicationTandem(Candidate):
 
     def get_vcf_entry_as_ins(self, sequence_alleles = False, reference = None, read_names = False):
         contig = self.source_contig
-        start = self.source_end
-        end = self.source_end + self.copies * (self.source_end - self.source_start)
+        start = self.source_start
+        end = self.source_end
         svtype = "INS"
         filters = []
         if sequence_alleles:
@@ -207,8 +208,8 @@ class CandidateDuplicationTandem(Candidate):
             filters.append("not_fully_covered")
         info_template="SVTYPE={0};END={1};SVLEN={2}"
         info_string = info_template.format(svtype, 
-                                           start, 
-                                           end - start)
+                                           end, 
+                                           (end - start) * self.copies)
         if read_names:
             info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(

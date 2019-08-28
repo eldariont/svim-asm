@@ -93,10 +93,10 @@ def compute_distance(candidate_with_haplotype1, candidate_with_haplotype2, refer
         region_start = min(candidate1.source_start, candidate2.source_start) - 100
         region_end = max(candidate1.source_end, candidate2.source_end) + 100
         haplotype1 = reference.fetch(region_chr, region_start, candidate1.source_start).upper() + \
-                     reference.fetch(region_chr, candidate1.source_start, candidate1.source_end).upper() * candidate1.copies + \
+                     reference.fetch(region_chr, candidate1.source_start, candidate1.source_end).upper() * (candidate1.copies + 1) + \
                      reference.fetch(region_chr, candidate1.source_end, region_end).upper()
         haplotype2 = reference.fetch(region_chr, region_start, candidate2.source_start).upper() + \
-                     reference.fetch(region_chr, candidate2.source_start, candidate2.source_end).upper() * candidate2.copies + \
+                     reference.fetch(region_chr, candidate2.source_start, candidate2.source_end).upper() * (candidate2.copies + 1) + \
                      reference.fetch(region_chr, candidate2.source_end, region_end).upper()
         editDistance = align(haplotype1, haplotype2)["editDistance"]
     elif candidate1.type == "DUP_INT":
@@ -291,7 +291,6 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_thr
                                                                       genotype))
         elif len(cluster) == 2:
             candidate = cluster[0][1]
-            fully_covered = cluster[0][1].fully_covered or cluster[1][1].fully_covered
             reads = cluster[0][1].reads + cluster[1][1].reads
             cutpaste = cluster[0][1].cutpaste or cluster[1][1].cutpaste
             genotype = "1/1"
