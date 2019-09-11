@@ -103,14 +103,14 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                 else:
                     distance_on_reference = alignment_next['ref_start'] - alignment_current['ref_end']
                 #No overlap on read
-                if distance_on_read >= -options.segment_overlap_tolerance:
+                if distance_on_read >= -options.query_overlap_tolerance:
                     #No overlap on reference
-                    if distance_on_reference >= -options.segment_overlap_tolerance:
+                    if distance_on_reference >= -options.reference_overlap_tolerance:
                         deviation = distance_on_read - distance_on_reference
                         #INS candidate
                         if deviation >= options.min_sv_size:
                             #No gap on reference
-                            if distance_on_reference <= options.segment_gap_tolerance:
+                            if distance_on_reference <= options.reference_gap_tolerance:
                                 if not alignment_current['is_reverse']:
                                     insertion_seq = primary.query_sequence[alignment_current['q_end']:alignment_current['q_end']+deviation]
                                     sv_candidates.append(CandidateInsertion(ref_chr, alignment_current['ref_end'], alignment_current['ref_end'] + deviation, [read_name], insertion_seq))
@@ -120,7 +120,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                         #DEL candidate
                         elif -options.max_sv_size <= deviation <= -options.min_sv_size:
                             #No gap on read
-                            if distance_on_read <= options.segment_gap_tolerance:
+                            if distance_on_read <= options.query_gap_tolerance:
                                 if not alignment_current['is_reverse']:
                                     sv_candidates.append(CandidateDeletion(ref_chr, alignment_current['ref_end'], alignment_current['ref_end'] - deviation, [read_name]))
                                 else:
@@ -128,7 +128,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                         #Either very large DEL or TRANS
                         elif deviation < -options.max_sv_size:
                             #No gap on read
-                            if distance_on_read <= options.segment_gap_tolerance:
+                            if distance_on_read <= options.query_gap_tolerance:
                                 if not alignment_current['is_reverse']:
                                     sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_end'] - 1, 'fwd', ref_chr, alignment_next['ref_start'], 'fwd', [read_name]))
                                     translocations.append(('fwd', 'fwd', ref_chr, alignment_current['ref_end'] - 1, ref_chr, alignment_next['ref_start']))
@@ -137,48 +137,53 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                                     translocations.append(('rev', 'rev', ref_chr, alignment_current['ref_start'], ref_chr, alignment_next['ref_end'] - 1))
                     #overlap on reference
                     else:
-                        #Tandem Duplication
-                        if distance_on_reference <= -options.min_sv_size:
-                            if not alignment_current['is_reverse']:
-                                #Tandem Duplication
-                                if alignment_next['ref_end'] > alignment_current['ref_start']:
-                                    tandem_duplications.append((ref_chr, alignment_next['ref_start'], alignment_current['ref_end'], True))
-                                #Large tandem duplication
-                                elif distance_on_reference >= -options.max_sv_size:
-                                    tandem_duplications.append((ref_chr, alignment_next['ref_start'], alignment_current['ref_end'], False))
-                                #Either very large TANDEM or TRANS
+                        #No gap on read
+                        if distance_on_read <= options.query_gap_tolerance:
+                            deviation = distance_on_read - distance_on_reference
+                            #Tandem Duplication
+                            if deviation >= options.min_sv_size:
+                                if not alignment_current['is_reverse']:
+                                    #Tandem Duplication (fully covered)
+                                    if alignment_next['ref_end'] > alignment_current['ref_start']:
+                                        tandem_duplications.append((ref_chr, alignment_next['ref_start'], alignment_next['ref_start'] + deviation, True))
+                                    #Tandem duplication (not fully covered)
+                                    elif distance_on_reference >= -options.max_sv_size:
+                                        tandem_duplications.append((ref_chr, alignment_next['ref_start'], alignment_next['ref_start'] + deviation, False))
+                                    #Either very large TANDEM or TRANS
+                                    else:
+                                        sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_end'] - 1, 'fwd', ref_chr, alignment_next['ref_start'], 'fwd', [read_name]))
+                                        translocations.append(('fwd', 'fwd', ref_chr, alignment_current['ref_end'] - 1, ref_chr, alignment_next['ref_start']))
                                 else:
-                                    sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_end'] - 1, 'fwd', ref_chr, alignment_next['ref_start'], 'fwd', [read_name]))
-                                    translocations.append(('fwd', 'fwd', ref_chr, alignment_current['ref_end'] - 1, ref_chr, alignment_next['ref_start']))
-                            else:
-                                #Tandem Duplication
-                                if alignment_next['ref_start'] < alignment_current['ref_end']:
-                                    tandem_duplications.append((ref_chr, alignment_current['ref_start'], alignment_next['ref_end'], True))
-                                #Large tandem duplication
-                                elif distance_on_reference >= -options.max_sv_size:
-                                    tandem_duplications.append((ref_chr, alignment_current['ref_start'], alignment_next['ref_end'], False))
-                                #Either very large TANDEM or TRANS
-                                else:
-                                    sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_start'], 'rev', ref_chr, alignment_next['ref_end'] - 1, 'rev', [read_name]))
-                                    translocations.append(('rev', 'rev', ref_chr, alignment_current['ref_start'], ref_chr, alignment_next['ref_end'] - 1))
+                                    #Tandem Duplication
+                                    if alignment_next['ref_start'] < alignment_current['ref_end']:
+                                        tandem_duplications.append((ref_chr, alignment_current['ref_start'], alignment_current['ref_start'] + deviation, True))
+                                    #Large tandem duplication
+                                    elif distance_on_reference >= -options.max_sv_size:
+                                        tandem_duplications.append((ref_chr, alignment_current['ref_start'], alignment_current['ref_start'] + deviation, False))
+                                    #Either very large TANDEM or TRANS
+                                    else:
+                                        sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_start'], 'rev', ref_chr, alignment_next['ref_end'] - 1, 'rev', [read_name]))
+                                        translocations.append(('rev', 'rev', ref_chr, alignment_current['ref_start'], ref_chr, alignment_next['ref_end'] - 1))
             #Different orientations
             else:
                 #Normal to reverse
                 if not alignment_current['is_reverse'] and alignment_next['is_reverse']:
-                    if -options.segment_overlap_tolerance <= distance_on_read <= options.segment_gap_tolerance:
-                        if alignment_next['ref_start'] - alignment_current['ref_end'] >= -options.segment_overlap_tolerance: # Case 1
+                    distance_on_reference = alignment_next['ref_end'] - alignment_current['ref_end']
+                    deviation = distance_on_read - distance_on_reference
+                    if -options.query_overlap_tolerance <= distance_on_read <= options.query_gap_tolerance:
+                        if alignment_next['ref_start'] - alignment_current['ref_end'] >= -options.reference_overlap_tolerance: # Case 1
                             #INV candidate
-                            if alignment_next['ref_end'] - alignment_current['ref_end'] <= options.max_sv_size:
-                                inversions.append((ref_chr, alignment_current['ref_end'], alignment_next['ref_end'], "left_fwd"))
+                            if options.min_sv_size <= -deviation <= options.max_sv_size:
+                                inversions.append((ref_chr, alignment_current['ref_end'], alignment_current['ref_end'] - deviation, "left_fwd"))
                                 #transitions.append(('inversion', 'left_fwd', ref_chr, alignment_current['ref_end'], alignment_next['ref_end']))
                             #Either very large INV or TRANS
                             else:
                                 sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_end'] - 1, 'fwd', ref_chr, alignment_next['ref_end'] - 1, 'rev', [read_name]))
                                 translocations.append(('fwd', 'rev', ref_chr, alignment_current['ref_end'] - 1, ref_chr, alignment_next['ref_end'] - 1))
-                        elif alignment_current['ref_start'] - alignment_next['ref_end'] >= -options.segment_overlap_tolerance: # Case 3
+                        elif alignment_current['ref_start'] - alignment_next['ref_end'] >= -options.reference_overlap_tolerance: # Case 3
                             #INV candidate
-                            if alignment_current['ref_end'] - alignment_next['ref_end'] <= options.max_sv_size:
-                                inversions.append((ref_chr, alignment_next['ref_end'], alignment_current['ref_end'], "left_rev"))
+                            if options.min_sv_size <= deviation <= options.max_sv_size:
+                                inversions.append((ref_chr, alignment_next['ref_end'], alignment_next['ref_end'] + deviation, "left_rev"))
                                 #transitions.append(('inversion', 'left_rev', ref_chr, alignment_next['ref_end'], alignment_current['ref_end']))
                             #Either very large INV or TRANS
                             else:
@@ -189,20 +194,22 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                         #print("Overlapping read segments in read", read_name)
                 #Reverse to normal
                 if alignment_current['is_reverse'] and not alignment_next['is_reverse']:
-                    if -options.segment_overlap_tolerance <= distance_on_read <= options.segment_gap_tolerance:
-                        if alignment_next['ref_start'] - alignment_current['ref_end'] >= -options.segment_overlap_tolerance: # Case 2
+                    distance_on_reference = alignment_next['ref_start'] - alignment_current['ref_start'] 
+                    deviation = distance_on_read - distance_on_reference
+                    if -options.query_overlap_tolerance <= distance_on_read <= options.query_gap_tolerance:
+                        if alignment_next['ref_start'] - alignment_current['ref_end'] >= -options.reference_overlap_tolerance: # Case 2
                             #INV candidate
-                            if alignment_next['ref_start'] - alignment_current['ref_start'] <= options.max_sv_size:
-                                inversions.append((ref_chr, alignment_current['ref_start'], alignment_next['ref_start'], "right_fwd"))
+                            if options.min_sv_size <= -deviation <= options.max_sv_size:
+                                inversions.append((ref_chr, alignment_current['ref_start'], alignment_current['ref_start'] - deviation, "right_fwd"))
                                 #transitions.append(('inversion', 'right_fwd', ref_chr, alignment_current['ref_start'], alignment_next['ref_start']))
                             #Either very large INV or TRANS
                             else:
                                 sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_start'], 'rev', ref_chr, alignment_next['ref_start'], 'fwd', [read_name]))
                                 translocations.append(('rev', 'fwd', ref_chr, alignment_current['ref_start'], ref_chr, alignment_next['ref_start']))
-                        elif alignment_current['ref_start'] - alignment_next['ref_end'] >= -options.segment_overlap_tolerance: # Case 4
+                        elif alignment_current['ref_start'] - alignment_next['ref_end'] >= -options.reference_overlap_tolerance: # Case 4
                             #INV candidate
-                            if alignment_current['ref_start'] - alignment_next['ref_start'] <= options.max_sv_size:
-                                inversions.append((ref_chr, alignment_next['ref_start'], alignment_current['ref_start'], "right_rev"))
+                            if options.min_sv_size <= deviation <= options.max_sv_size:
+                                inversions.append((ref_chr, alignment_next['ref_start'], alignment_next['ref_start'] + deviation, "right_rev"))
                                 #transitions.append(('inversion', 'right_rev', ref_chr, alignment_next['ref_start'], alignment_current['ref_start']))
                             #Either very large INV or TRANS
                             else:
@@ -218,9 +225,9 @@ def analyze_read_segments(primary, supplementaries, bam, options):
             #Same orientation
             if alignment_current['is_reverse'] == alignment_next['is_reverse']:
                 #No overlap on read
-                if distance_on_read >= -options.segment_overlap_tolerance:
+                if distance_on_read >= -options.query_overlap_tolerance:
                     #No gap on read
-                    if distance_on_read <= options.segment_gap_tolerance:
+                    if distance_on_read <= options.query_gap_tolerance:
                         if not alignment_current['is_reverse']:
                             sv_candidates.append(CandidateBreakend(ref_chr_current, alignment_current['ref_end'] - 1, 'fwd', ref_chr_next, alignment_next['ref_start'], 'fwd', [read_name]))
                             translocations.append(('fwd', 'fwd', ref_chr_current, alignment_current['ref_end'] - 1, ref_chr_next, alignment_next['ref_start']))

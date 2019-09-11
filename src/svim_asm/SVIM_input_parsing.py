@@ -59,24 +59,44 @@ SVIM-asm has an haploid and a diploid mode depending on the input assembly and p
                                               indicate a very long deletion (inversion) or a translocation breakpoint. \
                                               SVIM calls a translocation breakpoint if the mapping distance is larger \
                                               than this parameter and a deletion (or inversion) if it is smaller or equal.')
-    group_haploid_collect.add_argument('--segment_gap_tolerance',
+    group_haploid_collect.add_argument('--query_gap_tolerance',
                                       type=int,
                                       default=50,
-                                      help='Maximum tolerated gap between adjacent alignment segments (default: %(default)s). \
-                                            This parameter applies to gaps on the reference and the query. Example: \
+                                      help='Maximum tolerated gap between adjacent alignment segments on the query \
+                                            (default: %(default)s). Example: \
                                             Deletions are detected from two subsequent segments of a split query sequence that are mapped \
-                                            far apart from each other on the reference. The segment gap tolerance determines \
+                                            far apart from each other on the reference. The query gap tolerance determines \
                                             the maximum tolerated length of the query gap between both segments. If there is an \
                                             unaligned query segment larger than this value between the two segments, no deletion is called.')
-    group_haploid_collect.add_argument('--segment_overlap_tolerance',
+    group_haploid_collect.add_argument('--query_overlap_tolerance',
                                       type=int,
                                       default=50,
-                                      help='Maximum tolerated overlap between adjacent alignment segments (default: %(default)s). \
-                                            This parameter applies to overlaps on the reference and the query. Example: \
+                                      help='Maximum tolerated overlap between adjacent alignment segments on the query \
+                                            (default: %(default)s). Example: \
                                             Deletions are detected from two subsequent segments of a split query sequence that are mapped \
-                                            far apart from each other on the reference. The segment overlap tolerance determines \
+                                            far apart from each other on the reference. The query overlap tolerance determines \
                                             the maximum tolerated length of an overlap between both segments in the query. If the \
                                             overlap between the two segments in the query is larger than this value, no deletion is called.')
+    group_haploid_collect.add_argument('--reference_gap_tolerance',
+                                      type=int,
+                                      default=50,
+                                      help='Maximum tolerated gap between adjacent alignment segments on the reference \
+                                            (default: %(default)s). Example: \
+                                            Insertions are detected from two segments of a split query sequence that are mapped \
+                                            right next to each other on the reference but with unaligned sequence between them on the query. \
+                                            The reference gap tolerance determines the maximum tolerated length of the reference gap between \
+                                            both segments. If there is a reference gap larger than this value between the two segments, no \
+                                            insertion is called.')
+    group_haploid_collect.add_argument('--reference_overlap_tolerance',
+                                      type=int,
+                                      default=50,
+                                      help='Maximum tolerated overlap between adjacent alignment segments on the reference \
+                                            (default: %(default)s). Example: \
+                                            Insertions are detected from two segments of a split query sequence that are mapped \
+                                            right next to each other on the reference but with unaligned sequence between them on the query. \
+                                            The reference overlap tolerance determines the maximum tolerated length of an overlap between \
+                                            both segments on the reference. If there is a reference gap larger than this value between the \
+                                            two segments, no insertion is called.')
     
     group_haploid_output = parser_haploid.add_argument_group('OUTPUT')
     group_haploid_output.add_argument('--sample',
@@ -144,24 +164,44 @@ SVIM-asm has an haploid and a diploid mode depending on the input assembly and p
                                               indicate a very long deletion (inversion) or a translocation breakpoint. \
                                               SVIM calls a translocation breakpoint if the mapping distance is larger \
                                               than this parameter and a deletion (or inversion) if it is smaller or equal.')
-    group_diploid_collect.add_argument('--segment_gap_tolerance',
+    group_diploid_collect.add_argument('--query_gap_tolerance',
                                       type=int,
                                       default=50,
-                                      help='Maximum tolerated gap between adjacent alignment segments (default: %(default)s). \
-                                            This parameter applies to gaps on the reference and the query. Example: \
+                                      help='Maximum tolerated gap between adjacent alignment segments on the query \
+                                            (default: %(default)s). Example: \
                                             Deletions are detected from two subsequent segments of a split query sequence that are mapped \
-                                            far apart from each other on the reference. The segment gap tolerance determines \
+                                            far apart from each other on the reference. The query gap tolerance determines \
                                             the maximum tolerated length of the query gap between both segments. If there is an \
                                             unaligned query segment larger than this value between the two segments, no deletion is called.')
-    group_diploid_collect.add_argument('--segment_overlap_tolerance',
+    group_diploid_collect.add_argument('--query_overlap_tolerance',
                                       type=int,
                                       default=50,
-                                      help='Maximum tolerated overlap between adjacent alignment segments (default: %(default)s). \
-                                            This parameter applies to overlaps on the reference and the query. Example: \
+                                      help='Maximum tolerated overlap between adjacent alignment segments on the query \
+                                            (default: %(default)s). Example: \
                                             Deletions are detected from two subsequent segments of a split query sequence that are mapped \
-                                            far apart from each other on the reference. The segment overlap tolerance determines \
+                                            far apart from each other on the reference. The query overlap tolerance determines \
                                             the maximum tolerated length of an overlap between both segments in the query. If the \
                                             overlap between the two segments in the query is larger than this value, no deletion is called.')
+    group_diploid_collect.add_argument('--reference_gap_tolerance',
+                                      type=int,
+                                      default=50,
+                                      help='Maximum tolerated gap between adjacent alignment segments on the reference \
+                                            (default: %(default)s). Example: \
+                                            Insertions are detected from two segments of a split query sequence that are mapped \
+                                            right next to each other on the reference but with unaligned sequence between them on the query. \
+                                            The reference gap tolerance determines the maximum tolerated length of the reference gap between \
+                                            both segments. If there is a reference gap larger than this value between the two segments, no \
+                                            insertion is called.')
+    group_diploid_collect.add_argument('--reference_overlap_tolerance',
+                                      type=int,
+                                      default=50,
+                                      help='Maximum tolerated overlap between adjacent alignment segments on the reference \
+                                            (default: %(default)s). Example: \
+                                            Insertions are detected from two segments of a split query sequence that are mapped \
+                                            right next to each other on the reference but with unaligned sequence between them on the query. \
+                                            The reference overlap tolerance determines the maximum tolerated length of an overlap between \
+                                            both segments on the reference. If there is a reference gap larger than this value between the \
+                                            two segments, no insertion is called.')
 
     group_diploid_pair = parser_diploid.add_argument_group('PAIR')
     group_diploid_pair.add_argument('--max_edit_distance',
