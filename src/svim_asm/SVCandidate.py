@@ -37,6 +37,7 @@ class Candidate:
 
 class CandidateDeletion(Candidate):
     def __init__(self, source_contig, source_start, source_end, reads, genotype = "1/1"):
+        assert source_end >= source_start, "Deletion end ({0}:{1}) is smaller than its start ({0}:{2}). From read {3}".format(source_contig, source_end, source_start, reads)
         self.source_contig = source_contig
         #0-based start of the deletion (first deleted base)
         self.source_start = source_start
@@ -78,6 +79,7 @@ class CandidateDeletion(Candidate):
 
 class CandidateInversion(Candidate):
     def __init__(self, source_contig, source_start, source_end, reads, complete, genotype = "1/1"):
+        assert source_end >= source_start, "Inversion end ({0}:{1}) is smaller than its start ({0}:{2}). From read {3}".format(source_contig, source_end, source_start, reads)
         self.source_contig = source_contig
         #0-based start of the inversion (first inverted base)
         self.source_start = source_start
@@ -123,6 +125,7 @@ class CandidateInversion(Candidate):
 
 class CandidateInsertion(Candidate):
     def __init__(self, dest_contig, dest_start, dest_end, reads, sequence, genotype = "1/1"):
+        assert dest_end >= dest_start, "Insertion end ({0}:{1}) is smaller than its start ({0}:{2}). From read {3}".format(dest_contig, dest_end, dest_start, reads)
         self.dest_contig = dest_contig
         #0-based start of the insertion (base after the insertion)
         self.dest_start = dest_start
@@ -172,6 +175,7 @@ class CandidateInsertion(Candidate):
 
 class CandidateDuplicationTandem(Candidate):
     def __init__(self, source_contig, source_start, source_end, copies, fully_covered, reads, genotype = "1/1"):
+        assert source_end >= source_start, "Tandem duplication end ({0}:{1}) is smaller than its start ({0}:{2}). From read {3}".format(source_contig, source_end, source_start, reads)
         self.source_contig = source_contig
         #0-based start of the region (first copied base)
         self.source_start = source_start
@@ -255,6 +259,8 @@ class CandidateDuplicationTandem(Candidate):
 
 class CandidateDuplicationInterspersed(Candidate):
     def __init__(self, source_contig, source_start, source_end, dest_contig, dest_start, dest_end, reads, cutpaste=False, genotype = "1/1"):
+        assert source_end >= source_start, "Interspersed duplication source end ({0}:{1}) is smaller than its start ({0}:{2}). From read {3}".format(source_contig, source_end, source_start, reads)
+        assert dest_end >= dest_start, "Interspersed duplication destination end ({0}:{1}) is smaller than its start ({0}:{2}). From read {3}".format(dest_contig, dest_end, dest_start, reads)
         self.source_contig = source_contig
         #0-based start of the region (first copied base)
         self.source_start = source_start
