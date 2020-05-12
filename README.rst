@@ -1,6 +1,9 @@
 SVIM-asm - Structural variant identification method (Assembly edition)
 ======================================================================
 
+.. image:: https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg
+    :target: http://bioconda.github.io
+
 SVIM-asm (pronounced *SWIM-assem*) is a structural variant caller for genome-genome alignments.
 It analyzes a given sorted SAM/BAM file (preferably from minimap2) and detects five different variant classes between the query assembly and the reference: deletions, insertions, tandem and interspersed duplications and inversions.
 
@@ -27,12 +30,24 @@ It is fast (<5 min for a human genome-genome alignment), easy to use and detects
 Installation
 ------------
 
+SVIM-asm can be installed most easily using conda:
+
+.. code-block:: bash
+
+    #Recommended: Install via conda into a new environment
+    conda create -n svimasm_env --channel bioconda svim-asm
+
+    #Alternatively: Install via conda into existing (active) environment
+    conda install --channel bioconda svim-asm
+
+Alternatively, SVIM-asm can be installed using `pip`:
+
 .. code-block:: bash
 
     #Install from github (requires Python 3)
     git clone https://github.com/eldariont/svim-asm.git
     cd svim-asm
-    pip3 install .
+    pip install .
 
 Execution
 -----
