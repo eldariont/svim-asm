@@ -67,7 +67,7 @@ class CandidateDeletion(Candidate):
             info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=contig,
-                    pos=start,
+                    pos=max(1, start),
                     id="PLACEHOLDERFORID",
                     ref=ref_allele,
                     alt=alt_allele,
@@ -152,7 +152,7 @@ class CandidateInsertion(Candidate):
         contig, start, end = self.get_destination()
         filters = []
         if sequence_alleles:
-            ref_allele = reference.fetch(contig, start-1, start).upper()
+            ref_allele = reference.fetch(contig, max(0, start-1), start).upper()
             alt_allele = ref_allele + self.sequence
         else:
             ref_allele = "N"
@@ -165,7 +165,7 @@ class CandidateInsertion(Candidate):
             info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=contig,
-                    pos=start,
+                    pos=max(1, start),
                     id="PLACEHOLDERFORID",
                     ref=ref_allele,
                     alt=alt_allele,
@@ -222,7 +222,7 @@ class CandidateDuplicationTandem(Candidate):
             info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=contig,
-                    pos=start,
+                    pos=start+1,
                     id="PLACEHOLDERFORID",
                     ref=ref_allele,
                     alt=alt_allele,
@@ -250,7 +250,7 @@ class CandidateDuplicationTandem(Candidate):
             info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=contig,
-                    pos=start,
+                    pos=start+1,
                     id="PLACEHOLDERFORID",
                     ref="N",
                     alt="<" + svtype + ">",
@@ -298,7 +298,7 @@ class CandidateDuplicationInterspersed(Candidate):
         svtype = "INS"
         filters = []
         if sequence_alleles:
-            ref_allele = reference.fetch(contig, start, start + 1).upper()
+            ref_allele = reference.fetch(contig, max(0, start-1), start).upper()
             alt_allele = ref_allele + reference.fetch(self.source_contig, self.source_start, self.source_end).upper()
         else:
             ref_allele = "N"
@@ -312,7 +312,7 @@ class CandidateDuplicationInterspersed(Candidate):
             info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=contig,
-                    pos=start,
+                    pos=max(1, start),
                     id="PLACEHOLDERFORID",
                     ref=ref_allele,
                     alt=alt_allele,
@@ -336,7 +336,7 @@ class CandidateDuplicationInterspersed(Candidate):
             info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=contig,
-                    pos=start,
+                    pos=start+1,
                     id="PLACEHOLDERFORID",
                     ref="N",
                     alt="<" + svtype + ">",
