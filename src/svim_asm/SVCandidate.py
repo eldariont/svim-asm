@@ -36,13 +36,14 @@ class Candidate:
 
 
 class CandidateDeletion(Candidate):
-    def __init__(self, source_contig, source_start, source_end, reads, genotype = "1/1"):
+    def __init__(self, source_contig, source_start, source_end, reads, bam, genotype = "1/1"):
         assert source_end >= source_start, "Deletion end ({0}:{1}) is smaller than its start ({0}:{2}). From read {3}".format(source_contig, source_end, source_start, reads)
         self.source_contig = source_contig
+        contig_length = bam.get_reference_length(source_contig)
         #0-based start of the deletion (first deleted base)
-        self.source_start = source_start
+        self.source_start = max(0, source_start)
         #0-based end of the deletion (one past the last deleted base)
-        self.source_end = source_end
+        self.source_end = min(contig_length, source_end)
 
         self.type = "DEL"
         self.reads = reads
@@ -78,13 +79,14 @@ class CandidateDeletion(Candidate):
 
 
 class CandidateInversion(Candidate):
-    def __init__(self, source_contig, source_start, source_end, reads, complete, genotype = "1/1"):
+    def __init__(self, source_contig, source_start, source_end, reads, complete, bam, genotype = "1/1"):
         assert source_end >= source_start, "Inversion end ({0}:{1}) is smaller than its start ({0}:{2}). From read {3}".format(source_contig, source_end, source_start, reads)
         self.source_contig = source_contig
+        contig_length = bam.get_reference_length(source_contig)
         #0-based start of the inversion (first inverted base)
-        self.source_start = source_start
+        self.source_start = max(0, source_start)
         #0-based end of the inversion (one past the last inverted base)
-        self.source_end = source_end
+        self.source_end = min(contig_length, source_end)
 
         self.type = "INV"
         self.reads = reads
@@ -124,13 +126,14 @@ class CandidateInversion(Candidate):
 
 
 class CandidateInsertion(Candidate):
-    def __init__(self, dest_contig, dest_start, dest_end, reads, sequence, genotype = "1/1"):
+    def __init__(self, dest_contig, dest_start, dest_end, reads, sequence, bam, genotype = "1/1"):
         assert dest_end >= dest_start, "Insertion end ({0}:{1}) is smaller than its start ({0}:{2}). From read {3}".format(dest_contig, dest_end, dest_start, reads)
         self.dest_contig = dest_contig
+        contig_length = bam.get_reference_length(dest_contig)
         #0-based start of the insertion (base after the insertion)
-        self.dest_start = dest_start
+        self.dest_start = max(0, dest_start)
         #0-based start of the insertion (base after the insertion) + length of the insertion
-        self.dest_end = dest_end
+        self.dest_end = min(contig_length, dest_end)
 
         self.type = "INS"
         self.reads = reads
@@ -174,13 +177,14 @@ class CandidateInsertion(Candidate):
 
 
 class CandidateDuplicationTandem(Candidate):
-    def __init__(self, source_contig, source_start, source_end, copies, fully_covered, reads, genotype = "1/1"):
+    def __init__(self, source_contig, source_start, source_end, copies, fully_covered, reads, bam, genotype = "1/1"):
         assert source_end >= source_start, "Tandem duplication end ({0}:{1}) is smaller than its start ({0}:{2}). From read {3}".format(source_contig, source_end, source_start, reads)
         self.source_contig = source_contig
+        contig_length = bam.get_reference_length(source_contig)
         #0-based start of the region (first copied base)
-        self.source_start = source_start
+        self.source_start = max(0, source_start)
         #0-based end of the region (one past the last copied base)
-        self.source_end = source_end
+        self.source_end = min(contig_length, source_end)
         
         #number of additional copies
         self.copies = copies
@@ -258,20 +262,22 @@ class CandidateDuplicationTandem(Candidate):
 
 
 class CandidateDuplicationInterspersed(Candidate):
-    def __init__(self, source_contig, source_start, source_end, dest_contig, dest_start, dest_end, reads, cutpaste=False, genotype = "1/1"):
+    def __init__(self, source_contig, source_start, source_end, dest_contig, dest_start, dest_end, reads, bam, cutpaste=False, genotype = "1/1"):
         assert source_end >= source_start, "Interspersed duplication source end ({0}:{1}) is smaller than its start ({0}:{2}). From read {3}".format(source_contig, source_end, source_start, reads)
         assert dest_end >= dest_start, "Interspersed duplication destination end ({0}:{1}) is smaller than its start ({0}:{2}). From read {3}".format(dest_contig, dest_end, dest_start, reads)
         self.source_contig = source_contig
+        source_contig_length = bam.get_reference_length(source_contig)
         #0-based start of the region (first copied base)
-        self.source_start = source_start
+        self.source_start = max(0, source_start)
         #0-based end of the region (one past the last copied base)
-        self.source_end = source_end
+        self.source_end = min(source_contig_length, source_end)
 
         self.dest_contig = dest_contig
+        dest_contig_length = bam.get_reference_length(dest_contig)
         #0-based start of the insertion (base after the insertion)
-        self.dest_start = dest_start
+        self.dest_start = max(0, dest_start)
         #0-based end of the insertion (base after the insertion) + length of the insertion
-        self.dest_end = dest_end
+        self.dest_end = min(dest_contig_length, dest_end)
 
         self.cutpaste= cutpaste
         self.type = "DUP_INT"
@@ -342,15 +348,17 @@ class CandidateDuplicationInterspersed(Candidate):
 
 
 class CandidateBreakend(Candidate):
-    def __init__(self, source_contig, source_start, source_direction, dest_contig, dest_start, dest_direction, reads, genotype = "1/1"):
+    def __init__(self, source_contig, source_start, source_direction, dest_contig, dest_start, dest_direction, reads, bam, genotype = "1/1"):
         self.source_contig = source_contig
+        source_contig_length = bam.get_reference_length(source_contig)
         #0-based source of the translocation (first base before the translocation)
-        self.source_start = source_start
+        self.source_start = min(source_contig_length, max(0, source_start))
         self.source_direction = source_direction
 
         self.dest_contig = dest_contig
+        dest_contig_length = bam.get_reference_length(dest_contig)
         #0-based destination of the translocation (first base after the translocation)
-        self.dest_start = dest_start
+        self.dest_start = min(dest_contig_length, max(0, dest_start))
         self.dest_direction = dest_direction
 
         self.type = "BND"

@@ -107,11 +107,11 @@ def main():
         insertion_candidates = [cand for cand in sv_candidates if cand.type == "INS"]
         inversion_candidates = [cand for cand in sv_candidates if cand.type == "INV"]
         tandem_duplication_candidates = [cand for cand in sv_candidates if cand.type == "DUP_TAN"]
-        breakend_candidates = add_reverse_of_breakends([cand for cand in sv_candidates if cand.type == "BND"])
+        breakend_candidates = add_reverse_of_breakends([cand for cand in sv_candidates if cand.type == "BND"], aln_file1)
         interspersed_duplication_candidates = [cand for cand in sv_candidates if cand.type == "DUP_INT"]
     elif options.sub == 'diploid':
         logging.info("****************** STEP 2: PAIR ******************")
-        paired_candidates = pair_candidates(sv_candidates1, sv_candidates2, reference, options.max_edit_distance)
+        paired_candidates = pair_candidates(sv_candidates1, sv_candidates2, reference, options.max_edit_distance, aln_file1)
 
         deletion_candidates = [cand for cand in paired_candidates if cand.type == "DEL"]
         insertion_candidates = [cand for cand in paired_candidates if cand.type == "INS"]

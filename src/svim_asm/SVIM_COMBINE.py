@@ -12,7 +12,7 @@ from scipy.cluster.hierarchy import linkage, fcluster
 
 from svim_asm.SVCandidate import CandidateInversion, CandidateDuplicationTandem, CandidateDuplicationInterspersed, CandidateDeletion, CandidateInsertion, CandidateBreakend
 
-def add_reverse_of_breakends(breakend_candidates):
+def add_reverse_of_breakends(breakend_candidates, bam):
     final_candidates = []
     for candidate in breakend_candidates:
         final_candidates.append(candidate)
@@ -24,7 +24,8 @@ def add_reverse_of_breakends(breakend_candidates):
                                                   candidate.source_contig, 
                                                   candidate.source_start, 
                                                   new_dest_direction, 
-                                                  candidate.reads, 
+                                                  candidate.reads,
+                                                  bam,
                                                   candidate.genotype))
     return final_candidates
 
@@ -59,15 +60,17 @@ def compute_distance(candidate_with_haplotype1, candidate_with_haplotype2, refer
 
     if candidate1.type == "DEL":
         region_chr = candidate1.source_contig
-        region_start = min(candidate1.source_start, candidate2.source_start) - 100
-        region_end = max(candidate1.source_end, candidate2.source_end) + 100
+        chr_length = reference.get_reference_length(region_chr)
+        region_start = max(0, min(candidate1.source_start, candidate2.source_start) - 100)
+        region_end = min(chr_length, max(candidate1.source_end, candidate2.source_end) + 100)
         haplotype1 = reference.fetch(region_chr, region_start, candidate1.source_start).upper() + reference.fetch(region_chr, candidate1.source_end, region_end).upper()
         haplotype2 = reference.fetch(region_chr, region_start, candidate2.source_start).upper() + reference.fetch(region_chr, candidate2.source_end, region_end).upper()
         editDistance = align(haplotype1, haplotype2)["editDistance"]
     elif candidate1.type == "INV":
         region_chr = candidate1.source_contig
-        region_start = min(candidate1.source_start, candidate2.source_start) - 100
-        region_end = max(candidate1.source_end, candidate2.source_end) + 100
+        chr_length = reference.get_reference_length(region_chr)
+        region_start = max(0, min(candidate1.source_start, candidate2.source_start) - 100)
+        region_end = min(chr_length, max(candidate1.source_end, candidate2.source_end) + 100)
         inverted_seq1 = "".join(complement.get(base.upper(), base.upper()) for base in reversed(reference.fetch(region_chr, candidate1.source_start, candidate1.source_end).upper()))
         haplotype1 = reference.fetch(region_chr, region_start, candidate1.source_start).upper() + \
                      inverted_seq1 + \
@@ -79,8 +82,9 @@ def compute_distance(candidate_with_haplotype1, candidate_with_haplotype2, refer
         editDistance = align(haplotype1, haplotype2)["editDistance"]
     elif candidate1.type == "INS":
         region_chr = candidate1.dest_contig
-        region_start = min(candidate1.dest_start, candidate2.dest_start) - 100
-        region_end = max(candidate1.dest_start, candidate2.dest_start) + 100
+        chr_length = reference.get_reference_length(region_chr)
+        region_start = max(0, min(candidate1.dest_start, candidate2.dest_start) - 100)
+        region_end = min(chr_length, max(candidate1.dest_start, candidate2.dest_start) + 100)
         haplotype1 = reference.fetch(region_chr, region_start, candidate1.dest_start).upper() + \
                      candidate1.sequence + \
                      reference.fetch(region_chr, candidate1.dest_start, region_end).upper()
@@ -90,8 +94,9 @@ def compute_distance(candidate_with_haplotype1, candidate_with_haplotype2, refer
         editDistance = align(haplotype1, haplotype2)["editDistance"]
     elif candidate1.type == "DUP_TAN":
         region_chr = candidate1.source_contig
-        region_start = min(candidate1.source_start, candidate2.source_start) - 100
-        region_end = max(candidate1.source_end, candidate2.source_end) + 100
+        chr_length = reference.get_reference_length(region_chr)
+        region_start = max(0, min(candidate1.source_start, candidate2.source_start) - 100)
+        region_end = min(chr_length, max(candidate1.source_end, candidate2.source_end) + 100)
         haplotype1 = reference.fetch(region_chr, region_start, candidate1.source_start).upper() + \
                      reference.fetch(region_chr, candidate1.source_start, candidate1.source_end).upper() * (candidate1.copies + 1) + \
                      reference.fetch(region_chr, candidate1.source_end, region_end).upper()
@@ -101,8 +106,9 @@ def compute_distance(candidate_with_haplotype1, candidate_with_haplotype2, refer
         editDistance = align(haplotype1, haplotype2)["editDistance"]
     elif candidate1.type == "DUP_INT":
         region_chr = candidate1.dest_contig
-        region_start = min(candidate1.dest_start, candidate2.dest_start) - 100
-        region_end = max(candidate1.dest_start, candidate2.dest_start) + 100
+        chr_length = reference.get_reference_length(region_chr)
+        region_start = max(0, min(candidate1.dest_start, candidate2.dest_start) - 100)
+        region_end = min(chr_length, max(candidate1.dest_start, candidate2.dest_start) + 100)
         haplotype1 = reference.fetch(region_chr, region_start, candidate1.dest_start).upper() + \
                      reference.fetch(candidate1.source_contig, candidate1.source_start, candidate1.source_end).upper() + \
                      reference.fetch(region_chr, candidate1.dest_start, region_end).upper()
@@ -146,7 +152,7 @@ def pair_haplotypes(partitions, reference, edit_distance_threshold = 10):
     return clusters_final
 
 
-def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_threshold):
+def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_threshold, bam):
     deletion_candidates1 = [(1, cand) for cand in sv_candidates1 if cand.type == "DEL"]
     insertion_candidates1 = [(1, cand) for cand in sv_candidates1 if cand.type == "INS"]
     inversion_candidates1 = [(1, cand) for cand in sv_candidates1 if cand.type == "INV"]
@@ -173,7 +179,8 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_thr
             paired_candidates.append(CandidateDeletion(candidate.source_contig, 
                                                        candidate.source_start, 
                                                        candidate.source_end, 
-                                                       candidate.reads, 
+                                                       candidate.reads,
+                                                       bam,
                                                        genotype))
         elif len(cluster) == 2:
             candidate = cluster[0][1]
@@ -182,7 +189,8 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_thr
             paired_candidates.append(CandidateDeletion(candidate.source_contig, 
                                                        candidate.source_start, 
                                                        candidate.source_end, 
-                                                       reads, 
+                                                       reads,
+                                                       bam,
                                                        genotype))
         else:
             logging.error("Cluster size should be either 1 or 2 but is " + str(len(cluster)))
@@ -200,6 +208,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_thr
                                                         candidate.source_end, 
                                                         candidate.reads, 
                                                         candidate.complete, 
+                                                        bam, 
                                                         genotype))
         elif len(cluster) == 2:
             candidate = cluster[0][1]
@@ -211,6 +220,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_thr
                                                         candidate.source_end, 
                                                         reads, 
                                                         complete, 
+                                                        bam, 
                                                         genotype))
         else:
             logging.error("Cluster size should be either 1 or 2 but is " + str(len(cluster)))
@@ -228,6 +238,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_thr
                                                         candidate.dest_end, 
                                                         candidate.reads, 
                                                         candidate.sequence, 
+                                                        bam, 
                                                         genotype))
         elif len(cluster) == 2:
             candidate = cluster[0][1]
@@ -238,6 +249,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_thr
                                                         candidate.dest_end, 
                                                         reads, 
                                                         candidate.sequence, 
+                                                        bam, 
                                                         genotype))
         else:
             logging.error("Cluster size should be either 1 or 2 but is " + str(len(cluster)))
@@ -256,6 +268,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_thr
                                                                 candidate.copies, 
                                                                 candidate.fully_covered, 
                                                                 candidate.reads,
+                                                                bam, 
                                                                 genotype))
         elif len(cluster) == 2:
             candidate = cluster[0][1]
@@ -268,6 +281,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_thr
                                                                 round(mean([cluster[0][1].copies, cluster[1][1].copies])),
                                                                 fully_covered,
                                                                 reads, 
+                                                                bam, 
                                                                 genotype))
         else:
             logging.error("Cluster size should be either 1 or 2 but is " + str(len(cluster)))
@@ -287,6 +301,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_thr
                                                                       candidate.dest_start, 
                                                                       candidate.dest_end,
                                                                       candidate.reads,
+                                                                      bam, 
                                                                       candidate.cutpaste,
                                                                       genotype))
         elif len(cluster) == 2:
@@ -301,6 +316,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_thr
                                                                       candidate.dest_start, 
                                                                       candidate.dest_end,
                                                                       reads,
+                                                                      bam, 
                                                                       cutpaste,
                                                                       genotype))
         else:

@@ -37,7 +37,7 @@ def reciprocal_overlap_distance(inversion1, inversion2):
     return 1 - minimum_relative_overlap
 
 
-def process_overlapping_inversions(active_inversions, query_name):
+def process_overlapping_inversions(active_inversions, query_name, bam):
     if len(active_inversions) < 2:
         clusters = [active_inversions]
     else:
@@ -54,7 +54,7 @@ def process_overlapping_inversions(active_inversions, query_name):
         start = max([i[1] for i in cluster])
         end = min([i[2] for i in cluster])
         complete = True if len(cluster) > 1 else False
-        inversion_candidates.append(CandidateInversion(chrom, start, end, [query_name], complete))
+        inversion_candidates.append(CandidateInversion(chrom, start, end, [query_name], complete, bam))
     return inversion_candidates
 
 def analyze_read_segments(primary, supplementaries, bam, options):
@@ -94,7 +94,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
 
         #Same chromosome
         if alignment_current['ref_id'] == alignment_next['ref_id']:
-            ref_chr = bam.getrname(alignment_current['ref_id'])
+            ref_chr = bam.get_reference_name(alignment_current['ref_id'])
             #Same orientation
             if alignment_current['is_reverse'] == alignment_next['is_reverse']:
                 #Compute distance on reference depending on orientation
@@ -113,27 +113,27 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                             if distance_on_reference <= options.reference_gap_tolerance:
                                 if not alignment_current['is_reverse']:
                                     insertion_seq = primary.query_sequence[alignment_current['q_end']:alignment_current['q_end']+deviation]
-                                    sv_candidates.append(CandidateInsertion(ref_chr, alignment_current['ref_end'], alignment_current['ref_end'] + deviation, [read_name], insertion_seq))
+                                    sv_candidates.append(CandidateInsertion(ref_chr, alignment_current['ref_end'], alignment_current['ref_end'] + deviation, [read_name], insertion_seq, bam))
                                 else:
                                     insertion_seq = primary.query_sequence[primary.infer_read_length() - alignment_next['q_start']:primary.infer_read_length() - alignment_next['q_start'] + deviation]
-                                    sv_candidates.append(CandidateInsertion(ref_chr, alignment_current['ref_start'], alignment_current['ref_start'] + deviation, [read_name], insertion_seq))
+                                    sv_candidates.append(CandidateInsertion(ref_chr, alignment_current['ref_start'], alignment_current['ref_start'] + deviation, [read_name], insertion_seq, bam))
                         #DEL candidate
                         elif -options.max_sv_size <= deviation <= -options.min_sv_size:
                             #No gap on read
                             if distance_on_read <= options.query_gap_tolerance:
                                 if not alignment_current['is_reverse']:
-                                    sv_candidates.append(CandidateDeletion(ref_chr, alignment_current['ref_end'], alignment_current['ref_end'] - deviation, [read_name]))
+                                    sv_candidates.append(CandidateDeletion(ref_chr, alignment_current['ref_end'], alignment_current['ref_end'] - deviation, [read_name], bam))
                                 else:
-                                    sv_candidates.append(CandidateDeletion(ref_chr, alignment_next['ref_end'], alignment_next['ref_end'] - deviation, [read_name]))
+                                    sv_candidates.append(CandidateDeletion(ref_chr, alignment_next['ref_end'], alignment_next['ref_end'] - deviation, [read_name], bam))
                         #Either very large DEL or TRANS
                         elif deviation < -options.max_sv_size:
                             #No gap on read
                             if distance_on_read <= options.query_gap_tolerance:
                                 if not alignment_current['is_reverse']:
-                                    sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_end'] - 1, 'fwd', ref_chr, alignment_next['ref_start'], 'fwd', [read_name]))
+                                    sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_end'] - 1, 'fwd', ref_chr, alignment_next['ref_start'], 'fwd', [read_name], bam))
                                     translocations.append(('fwd', 'fwd', ref_chr, alignment_current['ref_end'] - 1, ref_chr, alignment_next['ref_start']))
                                 else:
-                                    sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_start'], 'rev', ref_chr, alignment_next['ref_end'] - 1, 'rev', [read_name]))
+                                    sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_start'], 'rev', ref_chr, alignment_next['ref_end'] - 1, 'rev', [read_name], bam))
                                     translocations.append(('rev', 'rev', ref_chr, alignment_current['ref_start'], ref_chr, alignment_next['ref_end'] - 1))
                     #overlap on reference
                     else:
@@ -151,7 +151,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                                         tandem_duplications.append((ref_chr, alignment_next['ref_start'], alignment_next['ref_start'] + deviation, False))
                                     #Either very large TANDEM or TRANS
                                     else:
-                                        sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_end'] - 1, 'fwd', ref_chr, alignment_next['ref_start'], 'fwd', [read_name]))
+                                        sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_end'] - 1, 'fwd', ref_chr, alignment_next['ref_start'], 'fwd', [read_name], bam))
                                         translocations.append(('fwd', 'fwd', ref_chr, alignment_current['ref_end'] - 1, ref_chr, alignment_next['ref_start']))
                                 else:
                                     #Tandem Duplication
@@ -162,7 +162,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                                         tandem_duplications.append((ref_chr, alignment_current['ref_start'], alignment_current['ref_start'] + deviation, False))
                                     #Either very large TANDEM or TRANS
                                     else:
-                                        sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_start'], 'rev', ref_chr, alignment_next['ref_end'] - 1, 'rev', [read_name]))
+                                        sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_start'], 'rev', ref_chr, alignment_next['ref_end'] - 1, 'rev', [read_name], bam))
                                         translocations.append(('rev', 'rev', ref_chr, alignment_current['ref_start'], ref_chr, alignment_next['ref_end'] - 1))
             #Different orientations
             else:
@@ -178,7 +178,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                                 #transitions.append(('inversion', 'left_fwd', ref_chr, alignment_current['ref_end'], alignment_next['ref_end']))
                             #Either very large INV or TRANS
                             else:
-                                sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_end'] - 1, 'fwd', ref_chr, alignment_next['ref_end'] - 1, 'rev', [read_name]))
+                                sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_end'] - 1, 'fwd', ref_chr, alignment_next['ref_end'] - 1, 'rev', [read_name], bam))
                                 translocations.append(('fwd', 'rev', ref_chr, alignment_current['ref_end'] - 1, ref_chr, alignment_next['ref_end'] - 1))
                         elif alignment_current['ref_start'] - alignment_next['ref_end'] >= -options.reference_overlap_tolerance: # Case 3
                             #INV candidate
@@ -187,7 +187,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                                 #transitions.append(('inversion', 'left_rev', ref_chr, alignment_next['ref_end'], alignment_current['ref_end']))
                             #Either very large INV or TRANS
                             else:
-                                sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_end'] - 1, 'fwd', ref_chr, alignment_next['ref_end'] - 1, 'rev', [read_name]))
+                                sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_end'] - 1, 'fwd', ref_chr, alignment_next['ref_end'] - 1, 'rev', [read_name], bam))
                                 translocations.append(('fwd', 'rev', ref_chr, alignment_current['ref_end'] - 1, ref_chr, alignment_next['ref_end'] - 1))
                     else:
                         pass
@@ -204,7 +204,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                                 #transitions.append(('inversion', 'right_fwd', ref_chr, alignment_current['ref_start'], alignment_next['ref_start']))
                             #Either very large INV or TRANS
                             else:
-                                sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_start'], 'rev', ref_chr, alignment_next['ref_start'], 'fwd', [read_name]))
+                                sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_start'], 'rev', ref_chr, alignment_next['ref_start'], 'fwd', [read_name], bam))
                                 translocations.append(('rev', 'fwd', ref_chr, alignment_current['ref_start'], ref_chr, alignment_next['ref_start']))
                         elif alignment_current['ref_start'] - alignment_next['ref_end'] >= -options.reference_overlap_tolerance: # Case 4
                             #INV candidate
@@ -213,7 +213,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                                 #transitions.append(('inversion', 'right_rev', ref_chr, alignment_next['ref_start'], alignment_current['ref_start']))
                             #Either very large INV or TRANS
                             else:
-                                sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_start'], 'rev', ref_chr, alignment_next['ref_start'], 'fwd', [read_name]))
+                                sv_candidates.append(CandidateBreakend(ref_chr, alignment_current['ref_start'], 'rev', ref_chr, alignment_next['ref_start'], 'fwd', [read_name], bam))
                                 translocations.append(('rev', 'fwd', ref_chr, alignment_current['ref_start'], ref_chr, alignment_next['ref_start']))
                     else:
                         pass
@@ -229,10 +229,10 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                     #No gap on read
                     if distance_on_read <= options.query_gap_tolerance:
                         if not alignment_current['is_reverse']:
-                            sv_candidates.append(CandidateBreakend(ref_chr_current, alignment_current['ref_end'] - 1, 'fwd', ref_chr_next, alignment_next['ref_start'], 'fwd', [read_name]))
+                            sv_candidates.append(CandidateBreakend(ref_chr_current, alignment_current['ref_end'] - 1, 'fwd', ref_chr_next, alignment_next['ref_start'], 'fwd', [read_name], bam))
                             translocations.append(('fwd', 'fwd', ref_chr_current, alignment_current['ref_end'] - 1, ref_chr_next, alignment_next['ref_start']))
                         else:
-                            sv_candidates.append(CandidateBreakend(ref_chr_current, alignment_current['ref_start'], 'rev', ref_chr_next, alignment_next['ref_end'] - 1, 'rev', [read_name]))
+                            sv_candidates.append(CandidateBreakend(ref_chr_current, alignment_current['ref_start'], 'rev', ref_chr_next, alignment_next['ref_end'] - 1, 'rev', [read_name], bam))
                             translocations.append(('rev', 'rev', ref_chr_current, alignment_current['ref_start'], ref_chr_next, alignment_next['ref_end'] - 1))
                 #Overlap on read
                 else:
@@ -264,7 +264,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                 current_fully_covered.append(tandem_duplication[3])
             else:
                 fully_covered = True if sum(current_fully_covered) else False
-                sv_candidates.append(CandidateDuplicationTandem(current_chromosome, int(mean(current_starts)), int(mean(current_ends)), current_copy_number, fully_covered, [read_name]))
+                sv_candidates.append(CandidateDuplicationTandem(current_chromosome, int(mean(current_starts)), int(mean(current_ends)), current_copy_number, fully_covered, [read_name], bam))
                 current_chromosome = tandem_duplication[0]
                 current_starts =[tandem_duplication[1]]
                 current_ends =[tandem_duplication[2]]
@@ -272,7 +272,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                 current_fully_covered = [tandem_duplication[3]]
     if current_chromosome != None:
         fully_covered = True if sum(current_fully_covered) else False
-        sv_candidates.append(CandidateDuplicationTandem(current_chromosome, int(mean(current_starts)), int(mean(current_ends)), current_copy_number, fully_covered, [read_name]))
+        sv_candidates.append(CandidateDuplicationTandem(current_chromosome, int(mean(current_starts)), int(mean(current_ends)), current_copy_number, fully_covered, [read_name], bam))
 
     #Handle interspersed duplications
     for this_index in range(len(translocations)):
@@ -295,11 +295,11 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                             if before_dir1 == 'fwd':
                                 length = this_pos1 + 1 - before_pos2
                                 if options.min_sv_size <= length <= options.max_sv_size:
-                                    sv_candidates.append(CandidateDuplicationInterspersed(before_chr2, before_pos2, this_pos1 + 1, before_chr1, int(mean([before_pos1 + 1, this_pos2])), int(mean([before_pos1 + 1, this_pos2])) + length, [read_name]))
+                                    sv_candidates.append(CandidateDuplicationInterspersed(before_chr2, before_pos2, this_pos1 + 1, before_chr1, int(mean([before_pos1 + 1, this_pos2])), int(mean([before_pos1 + 1, this_pos2])) + length, [read_name], bam))
                             elif before_dir1 == 'rev':
                                 length = before_pos2 + 1 - this_pos1
                                 if options.min_sv_size <= length <= options.max_sv_size:
-                                    sv_candidates.append(CandidateDuplicationInterspersed(before_chr2, this_pos1, before_pos2 + 1, before_chr1, int(mean([before_pos1, this_pos2 + 1])), int(mean([before_pos1, this_pos2 + 1])) + length, [read_name]))
+                                    sv_candidates.append(CandidateDuplicationInterspersed(before_chr2, this_pos1, before_pos2 + 1, before_chr1, int(mean([before_pos1, this_pos2 + 1])), int(mean([before_pos1, this_pos2 + 1])) + length, [read_name], bam))
                         #INV_INS_DUP candidate
                         else:
                             pass
@@ -317,9 +317,9 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                 active_inversions.append(inversion)
             else:
                 #Cluster inversions
-                sv_candidates.extend(process_overlapping_inversions(active_inversions, read_name))
+                sv_candidates.extend(process_overlapping_inversions(active_inversions, read_name, bam))
                 active_inversions = []
     if len(active_inversions) > 0:
-        sv_candidates.extend(process_overlapping_inversions(active_inversions, read_name))  
+        sv_candidates.extend(process_overlapping_inversions(active_inversions, read_name, bam))  
 
     return sv_candidates

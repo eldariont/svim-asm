@@ -37,10 +37,10 @@ def analyze_alignment_indel(alignment, bam, query_name, options):
     indels = analyze_cigar_indel(alignment.cigartuples, options.min_sv_size)
     for pos_ref, pos_read, length, typ in indels:
         if typ == "DEL":
-            sv_candidates.append(CandidateDeletion(ref_chr, ref_start + pos_ref, ref_start + pos_ref + length, [query_name]))
+            sv_candidates.append(CandidateDeletion(ref_chr, ref_start + pos_ref, ref_start + pos_ref + length, [query_name], bam))
         elif typ == "INS":
             insertion_seq = alignment.query_sequence[pos_read:pos_read+length]
-            sv_candidates.append(CandidateInsertion(ref_chr, ref_start + pos_ref, ref_start + pos_ref + length, [query_name], insertion_seq))
+            sv_candidates.append(CandidateInsertion(ref_chr, ref_start + pos_ref, ref_start + pos_ref + length, [query_name], insertion_seq, bam))
     return sv_candidates
 
 
