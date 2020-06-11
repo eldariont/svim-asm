@@ -4,8 +4,10 @@ SVIM-asm - Structural variant identification method (Assembly edition)
 .. image:: https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg
     :target: http://bioconda.github.io
 
-SVIM-asm (pronounced *SWIM-assem*) is a structural variant caller for genome-genome alignments.
+SVIM-asm (pronounced *SWIM-assem*) is a structural variant caller for haploid or diploid genome-genome alignments.
 It analyzes a given sorted SAM/BAM file (preferably from minimap2) and detects five different variant classes between the query assembly and the reference: deletions, insertions, tandem and interspersed duplications and inversions.
+
+**Note!** To analyze raw long sequencing reads please use our other method `SVIM <https://github.com/eldariont/svim>`_.
 
 Background
 ----------
@@ -21,7 +23,7 @@ This is reflected in the large number of genetic diseases that are caused by SVs
 Nowadays, SVs are usually detected using data from second-generation sequencing (Illumina) or third-generation sequencing (PacBio and Oxford Nanopore).
 Typically, the reads from a sequencing experiment are first aligned to a reference genome before the alignments are analyzed for characteristic signatures of SVs.
 Recently, substantial advances in sequencing technology and software development have made the de novo assembly of large mammalian genomes more efficient than ever.
-Accurate assemblies of the human genome can now be generated in a few days and at a fraction of its former cost. `[Shafin et al.] <https://www.biorxiv.org/content/10.1101/715722v1>`_
+Accurate assemblies of the human genome can now be generated in a few days and at a fraction of its former cost. `[Shafin et al.] <https://doi.org/10.1038/s41587-020-0503-6>`_
 
 Similarly to raw sequencing reads, the genome assemblies can be aligned to another genome to uncover genomic rearrangements and structural variants.
 Our tool, SVIM-asm, detects structural variants between different assemblies or reference genomes from given genome-genome alignments.
