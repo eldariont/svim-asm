@@ -349,18 +349,28 @@ class CandidateDuplicationInterspersed(Candidate):
 
 class CandidateBreakend(Candidate):
     def __init__(self, source_contig, source_start, source_direction, dest_contig, dest_start, dest_direction, reads, bam, genotype = "1/1"):
-        self.source_contig = source_contig
-        source_contig_length = bam.get_reference_length(source_contig)
-        #0-based source of the translocation (first base before the translocation)
-        self.source_start = min(source_contig_length, max(0, source_start))
-        self.source_direction = source_direction
-
-        self.dest_contig = dest_contig
-        dest_contig_length = bam.get_reference_length(dest_contig)
-        #0-based destination of the translocation (first base after the translocation)
-        self.dest_start = min(dest_contig_length, max(0, dest_start))
-        self.dest_direction = dest_direction
-
+        if source_contig < dest_contig or (source_contig == dest_contig and source_start < dest_start):
+            self.source_contig = source_contig
+            source_contig_length = bam.get_reference_length(source_contig)
+            #0-based source of the translocation (first base before the translocation)
+            self.source_start = min(source_contig_length, max(0, source_start))
+            self.source_direction = source_direction
+            self.dest_contig = dest_contig
+            dest_contig_length = bam.get_reference_length(dest_contig)
+            #0-based destination of the translocation (first base after the translocation)
+            self.dest_start = min(dest_contig_length, max(0, dest_start))
+            self.dest_direction = dest_direction
+        else:
+            self.source_contig = dest_contig
+            source_contig_length = bam.get_reference_length(dest_contig)
+            #0-based source of the translocation (first base before the translocation)
+            self.source_start = min(source_contig_length, max(0, dest_start))
+            self.source_direction = 'fwd' if dest_direction == 'rev' else 'rev'
+            self.dest_contig = source_contig
+            dest_contig_length = bam.get_reference_length(source_contig)
+            #0-based destination of the translocation (first base after the translocation)
+            self.dest_start = min(dest_contig_length, max(0, source_start))
+            self.dest_direction = 'fwd' if source_direction == 'rev' else 'rev'
         self.type = "BND"
         self.reads = reads
         self.genotype = genotype
@@ -372,7 +382,9 @@ class CandidateBreakend(Candidate):
 
     def get_destination(self):
         return (self.dest_contig, self.dest_start)
-
+    
+    def get_key(self):
+        return (self.type, self.source_contig, self.source_start)
 
     def get_vcf_entry(self, read_names = False):
         source_contig, source_start = self.get_source()
@@ -382,6 +394,34 @@ class CandidateBreakend(Candidate):
         elif (self.source_direction == 'fwd') and (self.dest_direction == 'rev'):
             alt_string = "N]{contig}:{start}]".format(contig = dest_contig, start = dest_start)
         elif (self.source_direction == 'rev') and (self.dest_direction == 'rev'):
+            alt_string = "]{contig}:{start}]N".format(contig = dest_contig, start = dest_start)
+        elif (self.source_direction == 'rev') and (self.dest_direction == 'fwd'):
+            alt_string = "[{contig}:{start}[N".format(contig = dest_contig, start = dest_start)
+        filters = []
+        info_template="SVTYPE={0}"
+        info_string = info_template.format(self.type)
+        if read_names:
+            info_string += ";READS={0}".format(",".join(self.reads))
+        return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
+                    chrom=source_contig,
+                    pos=source_start,
+                    id="PLACEHOLDERFORID",
+                    ref="N",
+                    alt=alt_string,
+                    qual=".",
+                    filter="PASS" if len(filters) == 0 else ";".join(filters),
+                    info=info_string,
+                    format="GT",
+                    samples="{gt}".format(gt=self.genotype))
+
+    def get_vcf_entry_reverse(self, read_names = False):
+        source_contig, source_start = self.get_destination()
+        dest_contig, dest_start = self.get_source()
+        if (self.source_direction == 'rev') and (self.dest_direction == 'rev'):
+            alt_string = "N[{contig}:{start}[".format(contig = dest_contig, start = dest_start)
+        elif (self.source_direction == 'fwd') and (self.dest_direction == 'rev'):
+            alt_string = "N]{contig}:{start}]".format(contig = dest_contig, start = dest_start)
+        elif (self.source_direction == 'fwd') and (self.dest_direction == 'fwd'):
             alt_string = "]{contig}:{start}]N".format(contig = dest_contig, start = dest_start)
         elif (self.source_direction == 'rev') and (self.dest_direction == 'fwd'):
             alt_string = "[{contig}:{start}[N".format(contig = dest_contig, start = dest_start)

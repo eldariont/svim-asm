@@ -19,21 +19,23 @@ def is_similar(chr1, start1, end1, chr2, start2, end2):
 def reciprocal_overlap_distance(inversion1, inversion2):
     start1, end1, direction1 = inversion1
     start2, end2, direction2 = inversion2
-    #Inversion breakpoints with same direction cannot be joined 
+    #Inversion breakpoints with same direction cannot be joined
     if direction1 == direction2:
         return 1
+    #Non-overlapping inversion breakpoints cannot be joined
     if start2 >= end1:
         return 1
-    elif start1 >= end2:
+    if start1 >= end2:
         return 1
-    elif start2 >= start1:
+    
+    if start2 >= start1:
         overlap = min(end1, end2) - start2
     else:
-        overlap = min(end1, end2) - max(start1, start2)
+        overlap = min(end1, end2) - start1
     
     relative_overlap1 = overlap / float(end1 - start1)
-    realtive_overlap2 = overlap / float(end2 - start2)
-    minimum_relative_overlap = min(relative_overlap1, realtive_overlap2)
+    relative_overlap2 = overlap / float(end2 - start2)
+    minimum_relative_overlap = min(relative_overlap1, relative_overlap2)
     return 1 - minimum_relative_overlap
 
 
@@ -317,7 +319,7 @@ def analyze_read_segments(primary, supplementaries, bam, options):
                         else:
                             pass
 
-    #Handle inversions
+    #Handle inversions (simple inversions produce two novel adjacencies that need to be merged for a complete candidate)
     sorted_inversions = sorted(inversions, key=lambda inversion: (inversion[0], inversion[1], inversion[2]))
     active_inversions = []
     for inversion in sorted_inversions:

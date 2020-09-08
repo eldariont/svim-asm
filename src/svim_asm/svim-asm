@@ -16,7 +16,7 @@ from pysam import FastaFile
 
 from svim_asm.SVIM_input_parsing import parse_arguments
 from svim_asm.SVIM_COLLECT import analyze_alignment_file_coordsorted
-from svim_asm.SVIM_COMBINE import add_reverse_of_breakends, pair_candidates, write_final_vcf
+from svim_asm.SVIM_COMBINE import pair_candidates, write_final_vcf
 from svim_asm.SVIM_plot import plot_sv_lengths
 
 
@@ -131,7 +131,7 @@ def main():
         insertion_candidates = [cand for cand in sv_candidates if cand.type == "INS"]
         inversion_candidates = [cand for cand in sv_candidates if cand.type == "INV"]
         tandem_duplication_candidates = [cand for cand in sv_candidates if cand.type == "DUP_TAN"]
-        breakend_candidates = add_reverse_of_breakends([cand for cand in sv_candidates if cand.type == "BND"], aln_file1)
+        breakend_candidates = [cand for cand in sv_candidates if cand.type == "BND"]
         interspersed_duplication_candidates = [cand for cand in sv_candidates if cand.type == "DUP_INT"]
     elif options.sub == 'diploid':
         logging.info("****************** STEP 2: PAIR ******************")
