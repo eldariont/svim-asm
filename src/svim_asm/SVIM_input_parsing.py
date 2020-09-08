@@ -105,19 +105,25 @@ SVIM-asm has an haploid and a diploid mode depending on the input assembly and p
                                         help='Sample ID to include in output vcf file (default: %(default)s)')
     group_haploid_output.add_argument('--types',
                                         type=str,
-                                        default="DEL,INS,INV,DUP_TAN,DUP_INT,BND",
+                                        default="DEL,INS,INV,DUP:TANDEM,DUP:INT,BND",
                                         help='SV types to include in output VCF (default: %(default)s). \
                                               Give a comma-separated list of SV types. The possible SV types are: DEL (deletions), \
-                                              INS (novel insertions), INV (inversions), DUP_TAN (tandem duplications), \
-                                              DUP_INT (interspersed duplications), BND (breakends).')
+                                              INS (novel insertions), INV (inversions), DUP:TANDEM (tandem duplications), \
+                                              DUP:INT (interspersed duplications), BND (breakends).')
     group_haploid_output.add_argument('--symbolic_alleles',
                                         action='store_true',
                                         help='Use symbolic alleles, such as <DEL> or <INV> in the VCF output (default: %(default)s). \
                                               By default, deletions, insertions, and inversions are represented by their nucleotide sequence in the output VCF.')
-    group_haploid_output.add_argument('--duplications_as_insertions',
+    group_haploid_output.add_argument('--tandem_duplications_as_insertions',
                                         action='store_true',
-                                        help='Represent tandem and interspersed duplications as insertions in output VCF (default: %(default)s). \
-                                              By default, duplications are represented by the SVTYPE=DUP and the genomic source is given by the \
+                                        help='Represent tandem duplications as insertions in output VCF (default: %(default)s). \
+                                              By default, tandem duplications are represented by the SVTYPE=DUP:TANDEM and the genomic source is given by the \
+                                              POS and END tags. When enabling this option, duplications are instead represented by the SVTYPE=INS \
+                                              and POS and END both give the insertion point of the duplication.')
+    group_haploid_output.add_argument('--interspersed_duplications_as_insertions',
+                                        action='store_true',
+                                        help='Represent interspersed duplications as insertions in output VCF (default: %(default)s). \
+                                              By default, interspersed duplications are represented by the SVTYPE=DUP:INT and the genomic source is given by the \
                                               POS and END tags. When enabling this option, duplications are instead represented by the SVTYPE=INS \
                                               and POS and END both give the insertion point of the duplication.')
     group_haploid_output.add_argument('--query_names',
@@ -216,19 +222,25 @@ SVIM-asm has an haploid and a diploid mode depending on the input assembly and p
                                         help='Sample ID to include in output vcf file (default: %(default)s)')
     group_diploid_output.add_argument('--types',
                                         type=str,
-                                        default="DEL,INS,INV,DUP_TAN,DUP_INT,BND",
+                                        default="DEL,INS,INV,DUP:TANDEM,DUP:INT,BND",
                                         help='SV types to include in output VCF (default: %(default)s). \
                                               Give a comma-separated list of SV types. The possible SV types are: DEL (deletions), \
-                                              INS (novel insertions), INV (inversions), DUP_TAN (tandem duplications), \
-                                              DUP_INT (interspersed duplications), BND (breakends).')
+                                              INS (novel insertions), INV (inversions), DUP:TANDEM (tandem duplications), \
+                                              DUP:INT (interspersed duplications), BND (breakends).')
     group_diploid_output.add_argument('--symbolic_alleles',
                                         action='store_true',
                                         help='Use symbolic alleles, such as <DEL> or <INV> in the VCF output (default: %(default)s). \
                                               By default, deletions, insertions, and inversions are represented by their nucleotide sequence in the output VCF.')
-    group_diploid_output.add_argument('--duplications_as_insertions',
+    group_diploid_output.add_argument('--tandem_duplications_as_insertions',
                                         action='store_true',
-                                        help='Represent tandem and interspersed duplications as insertions in output VCF (default: %(default)s). \
-                                              By default, duplications are represented by the SVTYPE=DUP and the genomic source is given by the \
+                                        help='Represent tandem duplications as insertions in output VCF (default: %(default)s). \
+                                              By default, tandem duplications are represented by the SVTYPE=DUP:TANDEM and the genomic source is given by the \
+                                              POS and END tags. When enabling this option, duplications are instead represented by the SVTYPE=INS \
+                                              and POS and END both give the insertion point of the duplication.')
+    group_diploid_output.add_argument('--interspersed_duplications_as_insertions',
+                                        action='store_true',
+                                        help='Represent interspersed duplications as insertions in output VCF (default: %(default)s). \
+                                              By default, interspersed duplications are represented by the SVTYPE=DUP:INT and the genomic source is given by the \
                                               POS and END tags. When enabling this option, duplications are instead represented by the SVTYPE=INS \
                                               and POS and END both give the insertion point of the duplication.')
     group_diploid_output.add_argument('--query_names',

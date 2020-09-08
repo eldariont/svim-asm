@@ -325,7 +325,7 @@ class CandidateDuplicationInterspersed(Candidate):
 
     def get_vcf_entry_as_dup(self, read_names = False):
         contig, start, end = self.get_source()
-        svtype = "DUP_INT"
+        svtype = "DUP:INT"
         filters = []
         info_template="SVTYPE={0};{1}END={2};SVLEN={3}"
         info_string = info_template.format(svtype, 
