@@ -32,7 +32,7 @@ SVIM-asm has an haploid and a diploid mode depending on the input assembly and p
                                    If the directory does not exist, it is created.')
     parser_haploid.add_argument('bam_file',
                              type=str,
-                             help='SAM/BAM file with alignment of query assembly to reference assembly (needs to be coordinate-sorted)')
+                             help='SAM/BAM file with alignment of query assembly to reference assembly (needs to be coordinate-sorted and indexed)')
     parser_haploid.add_argument('genome',
                                type=str,
                                help='Reference genome file that the assembly was aligned to (FASTA)')
@@ -140,10 +140,10 @@ SVIM-asm has an haploid and a diploid mode depending on the input assembly and p
                                    If the directory does not exist, it is created.')
     parser_diploid.add_argument('bam_file1',
                              type=str,
-                             help='SAM/BAM file with alignment of query assembly\'s first haplotype to reference assembly (needs to be coordinate-sorted)')
+                             help='SAM/BAM file with alignment of query assembly\'s first haplotype to reference assembly (needs to be coordinate-sorted and indexed)')
     parser_diploid.add_argument('bam_file2',
                              type=str,
-                             help='SAM/BAM file with alignment of query assembly\'s second haplotype to reference assembly (needs to be coordinate-sorted)')
+                             help='SAM/BAM file with alignment of query assembly\'s second haplotype to reference assembly (needs to be coordinate-sorted and indexed)')
     parser_diploid.add_argument('genome',
                                type=str,
                                help='Reference genome file that the assembly was aligned to (FASTA)')

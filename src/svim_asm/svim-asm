@@ -60,12 +60,20 @@ def main():
         aln_file1 = pysam.AlignmentFile(options.bam_file)
         try:
             if aln_file1.header["HD"]["SO"] == "coordinate":
+                try:
+                    aln_file1.check_index()
+                except ValueError:
+                    logging.error("Input BAM file is missing an index. Please generate with 'samtools index'. Exiting..")
+                    return
+                except AttributeError:
+                    logging.error("pysam's .check_index raised an Attribute error. Something is wrong with the input BAM file. Exiting..")
+                    return
                 sv_candidates = analyze_alignment_file_coordsorted(aln_file1, options)
             else:
                 logging.error("Input BAM file needs to be coordinate-sorted. Exiting..")
                 return
         except KeyError:
-            logging.error("Is the given input BAM file coordinate-sorted? It does not contain a sorting order in its header line.")
+            logging.error("Is the given input BAM file coordinate-sorted? It does not contain a sorting order in its header line. Exiting..")
             return
     elif options.sub == 'diploid':
         logging.info("MODE: diploid")
@@ -75,7 +83,15 @@ def main():
         aln_file2 = pysam.AlignmentFile(options.bam_file2)
         try:
             if aln_file1.header["HD"]["SO"] == "coordinate":
-                sv_candidates1 = analyze_alignment_file_coordsorted(aln_file1, options)
+                try:
+                    aln_file1.check_index()
+                except ValueError:
+                    logging.error("The first input BAM file is missing an index. Please generate with 'samtools index'. Exiting..")
+                    return
+                except AttributeError:
+                    logging.error("pysam's .check_index raised an Attribute error. Something is wrong with the first input BAM file. Exiting..")
+                    return
+                sv_candidates1 = analyze_alignment_file_coordsorted(aln_file1, options)    
             else:
                 logging.error("The first input BAM file needs to be coordinate-sorted. Exiting..")
                 return
@@ -84,12 +100,20 @@ def main():
             return
         try:
             if aln_file2.header["HD"]["SO"] == "coordinate":
+                try:
+                    aln_file2.check_index()
+                except ValueError:
+                    logging.error("The second input BAM file is missing an index. Please generate with 'samtools index'. Exiting..")
+                    return
+                except AttributeError:
+                    logging.error("pysam's .check_index raised an Attribute error. Something is wrong with the second input BAM file. Exiting..")
+                    return
                 sv_candidates2 = analyze_alignment_file_coordsorted(aln_file2, options)
             else:
                 logging.error("The second input BAM file needs to be coordinate-sorted. Exiting..")
                 return
         except KeyError:
-            logging.error("Is the given second input BAM file coordinate-sorted? It does not contain a sorting order in its header line.")
+            logging.error("Is the given second input BAM file coordinate-sorted? It does not contain a sorting order in its header line. Exiting..")
             return
 
     # Open reference genome sequence file
