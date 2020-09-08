@@ -5,7 +5,7 @@ SVIM-asm - Structural variant identification method (Assembly edition)
     :target: http://bioconda.github.io
 
 SVIM-asm (pronounced *SWIM-assem*) is a structural variant caller for haploid or diploid genome-genome alignments.
-It analyzes a given sorted SAM/BAM file (preferably from minimap2) and detects five different variant classes between the query assembly and the reference: deletions, insertions, tandem and interspersed duplications and inversions.
+It analyzes a given sorted BAM file (preferably from minimap2) and detects five different variant classes between the query assembly and the reference: deletions, insertions, tandem and interspersed duplications and inversions.
 
 **Note!** To analyze raw long sequencing reads please use our other method `SVIM <https://github.com/eldariont/svim>`_.
 
@@ -16,9 +16,9 @@ Background
     :align: center
 
 Structural variants (SVs) are typically defined as genomic variants larger than 50bps (e.g. deletions, duplications, inversions).
-Studies have shown that they affect more bases in any given genome than SNPs and small Indels taken together.
+Studies have shown that they affect more bases in an average genome than all SNPs or all small Indels together.
 Consequently, they have a large impact on genes and regulatory regions.
-This is reflected in the large number of genetic diseases that are caused by SVs.
+This is reflected in the large number of genetic disorders and other disease that are associated to SVs.
 
 Nowadays, SVs are usually detected using data from second-generation sequencing (Illumina) or third-generation sequencing (PacBio and Oxford Nanopore).
 Typically, the reads from a sequencing experiment are first aligned to a reference genome before the alignments are analyzed for characteristic signatures of SVs.
@@ -51,6 +51,11 @@ Alternatively, SVIM-asm can be installed using `pip`:
     cd svim-asm
     pip install .
 
+Changelog
+---------
+- **v0.1.1**: improve breakend detection, add FORMAT:CN tag for tandem duplications, add two new command-line options to output duplications as INS records in VCF, bugfixes
+- **v0.1.0**: initial beta release
+
 Execution
 -----
 
@@ -62,6 +67,7 @@ See this example for a haploid query assembly:
 
     minimap2 --paf-no-hit -a -x asm5 --cs -r2k -t <num_threads> <reference.fa> <assembly.fasta> > <alignments.sam>
     samtools sort -m4G -@4 -o <alignments.sorted.bam> <alignments.sam>
+    samtools index <alignments.sorted.bam>
     svim-asm haploid <working_dir> <alignments.sorted.bam> <reference.fa>
 
 To analyze a diploid assembly consisting of two haplotypes, you need to align both to the reference assembly: 
@@ -72,6 +78,8 @@ To analyze a diploid assembly consisting of two haplotypes, you need to align bo
     minimap2 --paf-no-hit -a -x asm5 --cs -r2k -t <num_threads> <reference.fa> <haplotype2.fasta> > <alignments_hap2.sam>
     samtools sort -m4G -@4 -o <alignments_hap1.sorted.bam> <alignments_hap1.sam>
     samtools sort -m4G -@4 -o <alignments_hap2.sorted.bam> <alignments_hap2.sam>
+    samtools index <alignments_hap1.sorted.bam
+    samtools index <alignments_hap2.sorted.bam
     svim-asm diploid <working_dir> <alignments_hap1.sorted.bam> <alignments_hap2.sorted.bam> <reference.fa>
 
 Output
