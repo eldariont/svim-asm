@@ -257,8 +257,8 @@ class CandidateDuplicationTandem(Candidate):
                     qual=".",
                     filter="PASS" if len(filters) == 0 else ";".join(filters),
                     info=info_string,
-                    format="GT",
-                    samples="{gt}".format(gt=self.genotype))
+                    format="GT:CN",
+                    samples="{gt}:{cn}".format(gt=self.genotype, cn=self.copies + 1))
 
 
 class CandidateDuplicationInterspersed(Candidate):
