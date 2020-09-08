@@ -237,7 +237,7 @@ class CandidateDuplicationTandem(Candidate):
         contig = self.source_contig
         start = self.source_start
         end = self.source_end
-        length = self.copies * (self.source_end - self.source_start)
+        length = self.source_end - self.source_start
         svtype = "DUP:TANDEM"
         filters = []
         if not(self.fully_covered):
