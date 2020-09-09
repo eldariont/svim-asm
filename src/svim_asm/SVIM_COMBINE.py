@@ -443,7 +443,7 @@ def write_final_vcf(int_duplication_candidates,
     else:
         if "DUP:TANDEM" in types_to_output:
             for candidate in tandem_duplication_candidates:
-                vcf_entries.append((candidate.get_source(), candidate.get_vcf_entry_as_dup(options.read_names), "DUP_TANDEM"))
+                vcf_entries.append((candidate.get_source(), candidate.get_vcf_entry_as_dup(options.query_names), "DUP_TANDEM"))
     if options.interspersed_duplications_as_insertions:
         if "INS" in types_to_output:
             for candidate in int_duplication_candidates:
