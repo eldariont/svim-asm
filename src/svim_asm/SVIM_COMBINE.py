@@ -152,7 +152,7 @@ def pair_haplotypes_breakends(partitions, span_position_distance_threshold = 0.3
         else:
             data = np.array( [[haplotype, candidate.get_source()[1], 1 if candidate.source_direction == 'fwd' else 0, candidate.get_destination()[1], 1 if candidate.dest_direction == 'fwd' else 0] for (haplotype, candidate) in partition])
             Z = linkage(data, method = "complete", metric = span_position_distance_breakends)
-            cluster_indices = list(fcluster(Z, options.cluster_max_distance, criterion='distance'))
+            cluster_indices = list(fcluster(Z, span_position_distance_threshold, criterion='distance'))
             new_clusters = [[] for i in range(max(cluster_indices))]
             for candidate_index, cluster_index in enumerate(cluster_indices):
                 new_clusters[cluster_index-1].append(partition[candidate_index])
@@ -333,7 +333,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_thr
     #BREAKENDS
     logging.info("Pairing {0} breakends...".format(len(breakend_candidates1) + len(breakend_candidates2)))
     partitions = form_partitions(breakend_candidates1 + breakend_candidates2, 10000)
-    clusters = pair_haplotypes_breakends(partitions, reference)
+    clusters = pair_haplotypes_breakends(partitions)
     for cluster in clusters:
         if len(cluster) == 1:
             candidate = cluster[0][1]
@@ -345,12 +345,11 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_thr
                                                         candidate.dest_start, 
                                                         candidate.dest_direction,
                                                         candidate.reads,
-                                                        candidate.bam,
+                                                        bam,
                                                         genotype))
         elif len(cluster) == 2:
             candidate = cluster[0][1]
             reads = cluster[0][1].reads + cluster[1][1].reads
-            cutpaste = cluster[0][1].cutpaste or cluster[1][1].cutpaste
             genotype = "1/1"
             paired_candidates.append(CandidateBreakend(candidate.source_contig, 
                                                         candidate.source_start, 
@@ -359,7 +358,7 @@ def pair_candidates(sv_candidates1, sv_candidates2, reference, edit_distance_thr
                                                         candidate.dest_start, 
                                                         candidate.dest_direction,
                                                         reads,
-                                                        candidate.bam,
+                                                        bam,
                                                         genotype))
         else:
             logging.error("Cluster size should be either 1 or 2 but is " + str(len(cluster)))
