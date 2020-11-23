@@ -32,7 +32,7 @@ def retrieve_other_alignments(main_alignment, bam):
         # Generate an aligned segment from the information
         a = pysam.AlignedSegment()
         a.query_name = main_alignment.query_name
-        a.query_sequence= main_alignment.query_sequence
+        a.query_sequence = ''
         if strand == "+":
             a.flag = 2048
         else:
