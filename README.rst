@@ -1,8 +1,14 @@
 SVIM-asm - Structural variant identification method (Assembly edition)
 ======================================================================
 
-.. image:: https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg
-    :target: http://bioconda.github.io
+.. image:: https://img.shields.io/pypi/v/svim-asm?style=flat
+    :target: https://pypi.org/project/svim-asm/
+
+.. image:: https://img.shields.io/conda/vn/bioconda/svim-asm?style=flat
+    :target: https://anaconda.org/bioconda/svim-asm
+
+.. image:: https://img.shields.io/conda/dn/bioconda/svim-asm?label=bioconda%20downloads&style=flat
+    :target: https://anaconda.org/bioconda/svim-asm
 
 SVIM-asm (pronounced *SWIM-assem*) is a structural variant caller for haploid or diploid genome-genome alignments.
 It analyzes a given sorted BAM file (preferably from minimap2) and detects five different variant classes between the query assembly and the reference: deletions, insertions, tandem and interspersed duplications and inversions.
@@ -59,7 +65,7 @@ Changelog
 - **v0.1.0**: initial beta release
 
 Execution
------
+---------
 
 SVIM-asm analyzes alignments between a query assembly and a reference assembly in SAM/BAM format. 
 We recommend to produce the alignments using `minimap2 <https://github.com/lh3/minimap2>`_.
