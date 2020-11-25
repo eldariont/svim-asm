@@ -53,6 +53,7 @@ Alternatively, SVIM-asm can be installed using `pip`:
 
 Changelog
 ---------
+- **v1.0.1**: reduce memory consumption substantially
 - **v1.0.0**: add genotyping of translocation breakpoints (BNDs), bugfixes
 - **v0.1.1**: improve breakend detection, add FORMAT:CN tag for tandem duplications, add two new command-line options to output duplications as INS records in VCF, bugfixes
 - **v0.1.0**: initial beta release

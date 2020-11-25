@@ -24,7 +24,7 @@ setup(name='svim-asm',
       author_email='heller_d@molgen.mpg.de',
       license='GPLv3',
       classifiers=[
-      'Development Status :: 4 - Beta',
+      'Development Status :: 5 - Production/Stable',
       'Environment :: Console',
       'Intended Audience :: Science/Research',
       'Topic :: Scientific/Engineering :: Bio-Informatics',
