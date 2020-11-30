@@ -29,7 +29,7 @@ This is reflected in the large number of genetic disorders and other disease tha
 Nowadays, SVs are usually detected using data from second-generation sequencing (Illumina) or third-generation sequencing (PacBio and Oxford Nanopore).
 Typically, the reads from a sequencing experiment are first aligned to a reference genome before the alignments are analyzed for characteristic signatures of SVs.
 Recently, substantial advances in sequencing technology and software development have made the de novo assembly of large mammalian genomes more efficient than ever.
-Accurate assemblies of the human genome can now be generated in a few days and at a fraction of its former cost. `[Shafin et al.] <https://doi.org/10.1038/s41587-020-0503-6>`_
+Accurate assemblies of the human genome can now be generated in a few days and at a fraction of its former cost. `(Shafin et al.) <https://doi.org/10.1038/s41587-020-0503-6>`_
 
 Similarly to raw sequencing reads, the genome assemblies can be aligned to another genome to uncover genomic rearrangements and structural variants.
 Our tool, SVIM-asm, detects structural variants between different assemblies or reference genomes from given genome-genome alignments.
@@ -108,7 +108,7 @@ If you experience problems or have suggestions please create an issue or a pull 
 Citation
 ---------
 
-SVIM-asm is a fork of our long-read caller SVIM. Feel free to read and cite our paper in Bioinformatics: https://doi.org/10.1093/bioinformatics/btz041
+Feel free to read and cite our preprint: `SVIM-asm: Structural variant detection from haploid and diploid genome assemblies <https://doi.org/10.1101/2020.10.27.356907>`_
 
 License
 -------
