@@ -390,13 +390,13 @@ class CandidateBreakend(Candidate):
         source_contig, source_start = self.get_source()
         dest_contig, dest_start = self.get_destination()
         if (self.source_direction == 'fwd') and (self.dest_direction == 'fwd'):
-            alt_string = "N[{contig}:{start}[".format(contig = dest_contig, start = dest_start)
+            alt_string = "N[{contig}:{start}[".format(contig = dest_contig, start = dest_start+1)
         elif (self.source_direction == 'fwd') and (self.dest_direction == 'rev'):
-            alt_string = "N]{contig}:{start}]".format(contig = dest_contig, start = dest_start)
+            alt_string = "N]{contig}:{start}]".format(contig = dest_contig, start = dest_start+1)
         elif (self.source_direction == 'rev') and (self.dest_direction == 'rev'):
-            alt_string = "]{contig}:{start}]N".format(contig = dest_contig, start = dest_start)
+            alt_string = "]{contig}:{start}]N".format(contig = dest_contig, start = dest_start+1)
         elif (self.source_direction == 'rev') and (self.dest_direction == 'fwd'):
-            alt_string = "[{contig}:{start}[N".format(contig = dest_contig, start = dest_start)
+            alt_string = "[{contig}:{start}[N".format(contig = dest_contig, start = dest_start+1)
         filters = []
         info_template="SVTYPE={0}"
         info_string = info_template.format(self.type)
@@ -404,7 +404,7 @@ class CandidateBreakend(Candidate):
             info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=source_contig,
-                    pos=source_start,
+                    pos=source_start+1,
                     id="PLACEHOLDERFORID",
                     ref="N",
                     alt=alt_string,
@@ -418,13 +418,13 @@ class CandidateBreakend(Candidate):
         source_contig, source_start = self.get_destination()
         dest_contig, dest_start = self.get_source()
         if (self.source_direction == 'rev') and (self.dest_direction == 'rev'):
-            alt_string = "N[{contig}:{start}[".format(contig = dest_contig, start = dest_start)
+            alt_string = "N[{contig}:{start}[".format(contig = dest_contig, start = dest_start+1)
         elif (self.source_direction == 'fwd') and (self.dest_direction == 'rev'):
-            alt_string = "N]{contig}:{start}]".format(contig = dest_contig, start = dest_start)
+            alt_string = "N]{contig}:{start}]".format(contig = dest_contig, start = dest_start+1)
         elif (self.source_direction == 'fwd') and (self.dest_direction == 'fwd'):
-            alt_string = "]{contig}:{start}]N".format(contig = dest_contig, start = dest_start)
+            alt_string = "]{contig}:{start}]N".format(contig = dest_contig, start = dest_start+1)
         elif (self.source_direction == 'rev') and (self.dest_direction == 'fwd'):
-            alt_string = "[{contig}:{start}[N".format(contig = dest_contig, start = dest_start)
+            alt_string = "[{contig}:{start}[N".format(contig = dest_contig, start = dest_start+1)
         filters = []
         info_template="SVTYPE={0}"
         info_string = info_template.format(self.type)
@@ -432,7 +432,7 @@ class CandidateBreakend(Candidate):
             info_string += ";READS={0}".format(",".join(self.reads))
         return "{chrom}\t{pos}\t{id}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\t{format}\t{samples}".format(
                     chrom=source_contig,
-                    pos=source_start,
+                    pos=source_start+1,
                     id="PLACEHOLDERFORID",
                     ref="N",
                     alt=alt_string,
