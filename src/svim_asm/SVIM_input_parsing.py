@@ -218,7 +218,7 @@ SVIM-asm has an haploid and a diploid mode depending on the input assembly and p
     group_diploid_pair = parser_diploid.add_argument_group('PAIR')
     group_diploid_pair.add_argument('--partition_max_distance',
                                         type=int,
-                                        default=10000,
+                                        default=1000,
                                         help='Maximum distance in bp between SVs in a partition (default: %(default)s). \
                                               Before pairing, the SV signatures are divided into coarse partitions. This parameter \
                                               determines the maximum distance between two subsequent signatures in the same partition. \
