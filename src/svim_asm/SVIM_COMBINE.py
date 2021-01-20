@@ -430,33 +430,38 @@ def write_final_vcf(int_duplication_candidates,
     sequence_alleles = not options.symbolic_alleles
     if "DEL" in types_to_output:
         for candidate in deletion_candidates:
-            vcf_entries.append((candidate.get_source(), candidate.get_vcf_entry(sequence_alleles, reference, options.query_names), "DEL"))
+            contig, start, end = candidate.get_source()
+            vcf_entries.append(((contig, max(1, start), end), candidate.get_vcf_entry(sequence_alleles, reference, options.query_names), "DEL"))
     if "INV" in types_to_output:
         for candidate in inversion_candidates:
-            vcf_entries.append((candidate.get_source(), candidate.get_vcf_entry(sequence_alleles, reference, options.query_names), "INV"))
+            contig, start, end = candidate.get_source()
+            vcf_entries.append(((contig, start+1, end), candidate.get_vcf_entry(sequence_alleles, reference, options.query_names), "INV"))
     if "INS" in types_to_output:
         for candidate in insertion_candidates:
-            vcf_entries.append((candidate.get_destination(), candidate.get_vcf_entry(sequence_alleles, reference, options.query_names), "INS"))
+            contig, start, end = candidate.get_destination()
+            vcf_entries.append(((contig, max(1, start), end), candidate.get_vcf_entry(sequence_alleles, reference, options.query_names), "INS"))
     if options.tandem_duplications_as_insertions:
         if "INS" in types_to_output:
             for candidate in tandem_duplication_candidates:
-                vcf_entries.append((candidate.get_source(), candidate.get_vcf_entry_as_ins(sequence_alleles, reference, options.query_names), "INS"))
+                vcf_entries.append(((candidate.source_contig, candidate.source_start+1, candidate.source_end), candidate.get_vcf_entry_as_ins(sequence_alleles, reference, options.query_names), "INS"))
     else:
         if "DUP:TANDEM" in types_to_output:
             for candidate in tandem_duplication_candidates:
-                vcf_entries.append((candidate.get_source(), candidate.get_vcf_entry_as_dup(options.query_names), "DUP_TANDEM"))
+                vcf_entries.append(((candidate.source_contig, candidate.source_start+1, candidate.source_end), candidate.get_vcf_entry_as_dup(options.query_names), "DUP_TANDEM"))
     if options.interspersed_duplications_as_insertions:
         if "INS" in types_to_output:
             for candidate in int_duplication_candidates:
-                vcf_entries.append((candidate.get_destination(), candidate.get_vcf_entry_as_ins(sequence_alleles, reference, options.query_names), "INS"))
+                contig, start, end = candidate.get_destination()
+                vcf_entries.append(((contig, max(1, start), end), candidate.get_vcf_entry_as_ins(sequence_alleles, reference, options.query_names), "INS"))
     else:
         if "DUP:INT" in types_to_output:
             for candidate in int_duplication_candidates:
-                vcf_entries.append((candidate.get_source(), candidate.get_vcf_entry_as_dup(options.query_names), "DUP_INT"))
+                contig, start, end = candidate.get_source()
+                vcf_entries.append(((contig, start+1, end), candidate.get_vcf_entry_as_dup(options.query_names), "DUP_INT"))
     if "BND" in types_to_output:
         for candidate in breakend_candidates:
-            vcf_entries.append(((candidate.get_source()[0], candidate.get_source()[1], candidate.get_source()[1] + 1), candidate.get_vcf_entry(options.query_names), "BND"))
-            vcf_entries.append(((candidate.get_destination()[0], candidate.get_destination()[1], candidate.get_destination()[1] + 1), candidate.get_vcf_entry_reverse(options.query_names), "BND"))
+            vcf_entries.append(((candidate.get_source()[0], candidate.get_source()[1]+1, candidate.get_source()[1] + 2), candidate.get_vcf_entry(options.query_names), "BND"))
+            vcf_entries.append(((candidate.get_destination()[0], candidate.get_destination()[1]+1, candidate.get_destination()[1] + 2), candidate.get_vcf_entry_reverse(options.query_names), "BND"))
 
     if sequence_alleles:
         reference.close()
