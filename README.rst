@@ -108,7 +108,7 @@ If you experience problems or have suggestions please create an issue or a pull 
 Citation
 ---------
 
-Feel free to read and cite our preprint: `SVIM-asm: Structural variant detection from haploid and diploid genome assemblies <https://doi.org/10.1101/2020.10.27.356907>`_
+Feel free to read and cite our paper in Bioinformatics: `SVIM-asm: Structural variant detection from haploid and diploid genome assemblies <https://doi.org/10.1093/bioinformatics/btaa1034>`_
 
 License
 -------
