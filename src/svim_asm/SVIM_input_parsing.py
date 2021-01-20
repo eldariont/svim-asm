@@ -36,6 +36,9 @@ SVIM-asm has an haploid and a diploid mode depending on the input assembly and p
     parser_haploid.add_argument('genome',
                                type=str,
                                help='Reference genome file that the assembly was aligned to (FASTA)')
+    parser_haploid.add_argument('--verbose',
+                              action='store_true',
+                              help='Enable more verbose logging (default: %(default)s)')
     group_haploid_collect = parser_haploid.add_argument_group('COLLECT')
     group_haploid_collect.add_argument('--min_mapq',
                                       type=int,
@@ -147,6 +150,9 @@ SVIM-asm has an haploid and a diploid mode depending on the input assembly and p
     parser_diploid.add_argument('genome',
                                type=str,
                                help='Reference genome file that the assembly was aligned to (FASTA)')
+    parser_diploid.add_argument('--verbose',
+                              action='store_true',
+                              help='Enable more verbose logging (default: %(default)s)')
     group_diploid_collect = parser_diploid.add_argument_group('COLLECT')
     group_diploid_collect.add_argument('--min_mapq',
                                       type=int,
