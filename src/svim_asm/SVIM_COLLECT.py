@@ -43,7 +43,11 @@ def retrieve_other_alignments(main_alignment, bam):
             a.mapping_quality = mapq
         except OverflowError:
             a.mapping_quality = 0
-        a.cigarstring = cigar
+        try:
+            a.cigarstring = cigar
+        except OverflowError:
+            logging.error("OverflowError while retrieving supplementary CIGAR string. Read name: {0}, Position: {1}, CIGAR: {2}".format(rname, pos, cigar))
+            continue
         a.next_reference_id = -1
         a.next_reference_start = -1
         a.template_length = 0
