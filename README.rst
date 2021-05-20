@@ -74,7 +74,7 @@ See this example for a haploid query assembly:
 
 .. code-block:: bash
 
-    minimap2 --paf-no-hit -a -x asm5 --cs -r2k -t <num_threads> <reference.fa> <assembly.fasta> > <alignments.sam>
+    minimap2 -a -x asm5 --cs -r2k -t <num_threads> <reference.fa> <assembly.fasta> > <alignments.sam>
     samtools sort -m4G -@4 -o <alignments.sorted.bam> <alignments.sam>
     samtools index <alignments.sorted.bam>
     svim-asm haploid <working_dir> <alignments.sorted.bam> <reference.fa>
@@ -83,8 +83,8 @@ To analyze a diploid assembly consisting of two haplotypes, you need to align bo
 
 .. code-block:: bash
 
-    minimap2 --paf-no-hit -a -x asm5 --cs -r2k -t <num_threads> <reference.fa> <haplotype1.fasta> > <alignments_hap1.sam>
-    minimap2 --paf-no-hit -a -x asm5 --cs -r2k -t <num_threads> <reference.fa> <haplotype2.fasta> > <alignments_hap2.sam>
+    minimap2 -a -x asm5 --cs -r2k -t <num_threads> <reference.fa> <haplotype1.fasta> > <alignments_hap1.sam>
+    minimap2 -a -x asm5 --cs -r2k -t <num_threads> <reference.fa> <haplotype2.fasta> > <alignments_hap2.sam>
     samtools sort -m4G -@4 -o <alignments_hap1.sorted.bam> <alignments_hap1.sam>
     samtools sort -m4G -@4 -o <alignments_hap2.sorted.bam> <alignments_hap2.sam>
     samtools index <alignments_hap1.sorted.bam
