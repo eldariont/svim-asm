@@ -51,7 +51,7 @@ def retrieve_other_alignments(main_alignment, bam):
         a.next_reference_id = -1
         a.next_reference_start = -1
         a.template_length = 0
-        a.query_qualities = main_alignment.query_qualities
+        a.query_qualities = ''
         a.set_tags([("NM", nm, "i")])
 
         other_alignments.append(a)
