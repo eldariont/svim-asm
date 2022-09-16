@@ -59,6 +59,7 @@ Alternatively, SVIM-asm can be installed using `pip`:
 
 Changelog
 ---------
+- **v1.0.3**: bugfixes
 - **v1.0.2**: change default value for partitioning, fix coordinates of BNDs and sorting of VCF records, add verbose mode
 - **v1.0.1**: reduce memory consumption substantially
 - **v1.0.0**: add genotyping of translocation breakpoints (BNDs), bugfixes
@@ -104,7 +105,7 @@ The following files are produced:
 Contact
 -------
 
-If you experience problems or have suggestions please create an issue or a pull request or contact heller_d@molgen.mpg.de.
+If you experience problems or have suggestions please create an issue. As this project is not actively maintained anymore, however, we can not promise that they will be addressed in time.
 
 Citation
 ---------
